@@ -1,0 +1,13 @@
+{
+  "src": [
+    "pages/Login",
+    "pages/Index",
+    "pages/DeviceDetail",
+    "pages/AutomationPage",
+    "pages/ZonePage",
+    "pages/CropPage",
+    "pages/ReportPage",
+    "pages/IrrigationPage",
+    "pages/LightingPage"
+  ]
+}
