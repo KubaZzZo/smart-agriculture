@@ -3,6 +3,25 @@ import { ApiService } from '../common/ApiService';
 import { ApiConstants, AppColors } from '../common/Constants';
 import { TokenResponse, LoginRequest, RegisterRequest, CaptchaResponse } from '../model/DataModels';
 
+@Component
+struct PwdRuleItem {
+  @Prop label: string = '';
+  @Prop passed: boolean = false;
+
+  build() {
+    Row() {
+      Text(this.passed ? '\u2713' : '\u2717')
+        .fontSize(13)
+        .fontColor(this.passed ? AppColors.PRIMARY : AppColors.WARN)
+        .margin({ right: 6 })
+      Text(this.label)
+        .fontSize(12)
+        .fontColor(this.passed ? AppColors.PRIMARY : AppColors.TEXT_HINT)
+    }
+    .margin({ top: 3 })
+  }
+}
+
 @Entry
 @Component
 struct Login {
@@ -58,7 +77,7 @@ struct Login {
   }
 
   isPasswordValid(): boolean {
-    return this.hasMinLen() && this.hasUpper() && this.hasLower() && this.hasDigit() && this.hasSymbol();
+    return this.hasMinLen();
   }
 
   async handleSubmit(): Promise<void> {
@@ -106,13 +125,15 @@ struct Login {
         const res = await ApiService.post<TokenResponse>(ApiConstants.AUTH_REGISTER, body);
         ApiService.saveToken(res.access_token, res.username, res.role);
       }
-      router.pushUrl({ url: 'pages/Index' });
+      this.getUIContext().getRouter().pushUrl({ url: 'pages/Index' });
     } catch (e) {
-      this.errorMsg = this.isLogin ? '登录失败，请检查用户名和密码' : '注册失败，请检查输入信息';
-      if (!this.isLogin) {
-        this.loadCaptcha();
-        this.captchaInput = '';
+      if (e instanceof Error) {
+        this.errorMsg = e.message;
+      } else {
+        this.errorMsg = this.isLogin ? '登录失败，请稍后重试' : '注册失败，请稍后重试';
       }
+      this.loadCaptcha();
+      this.captchaInput = '';
     } finally {
       this.loading = false;
     }
@@ -147,7 +168,13 @@ struct Login {
               .fontSize(18)
               .fontWeight(this.isLogin ? FontWeight.Bold : FontWeight.Normal)
               .fontColor(this.isLogin ? AppColors.PRIMARY : AppColors.TEXT_SECONDARY)
-              .onClick(() => { this.isLogin = true; this.errorMsg = ''; })
+              .onClick(() => { 
+                if (!this.isLogin) {
+                  this.isLogin = true; 
+                  this.errorMsg = ''; 
+                  this.captchaInput = '';
+                }
+              })
               .padding({ left: 16, right: 16, bottom: 8 })
               .border({ width: { bottom: this.isLogin ? 2 : 0 }, color: AppColors.PRIMARY })
             Text('注册')
@@ -169,10 +196,12 @@ struct Login {
             .type(InputType.Normal)
             .width('85%')
             .height(48)
-            .backgroundColor('#F0F0F0')
+            .backgroundColor(AppColors.CARD_BG)
+            .backdropBlur(20)
             .borderRadius(24)
             .padding({ left: 20, right: 20 })
             .margin({ bottom: 14 })
+            .shadow({ radius: 8, color: '#05000000', offsetX: 0, offsetY: 2 })
             .onChange((value: string) => { this.username = value; })
 
           // ===== 密码 =====
@@ -180,20 +209,22 @@ struct Login {
             .type(InputType.Password)
             .width('85%')
             .height(48)
-            .backgroundColor('#F0F0F0')
+            .backgroundColor(AppColors.CARD_BG)
+            .backdropBlur(20)
             .borderRadius(24)
             .padding({ left: 20, right: 20 })
             .margin({ bottom: this.isLogin ? 8 : 6 })
+            .shadow({ radius: 8, color: '#05000000', offsetX: 0, offsetY: 2 })
             .onChange((value: string) => { this.password = value; })
 
           // ===== 注册模式：密码强度提示 =====
           if (!this.isLogin) {
             Column() {
-              this.pwdRule('至少8位字符', this.hasMinLen())
-              this.pwdRule('包含大写字母 (A-Z)', this.hasUpper())
-              this.pwdRule('包含小写字母 (a-z)', this.hasLower())
-              this.pwdRule('包含数字 (0-9)', this.hasDigit())
-              this.pwdRule('包含特殊符号 (!@#$...)', this.hasSymbol())
+              PwdRuleItem({ label: '至少8位字符', passed: this.password.length >= 8 })
+              PwdRuleItem({ label: '包含大写字母 (A-Z)', passed: /[A-Z]/.test(this.password) })
+              PwdRuleItem({ label: '包含小写字母 (a-z)', passed: /[a-z]/.test(this.password) })
+              PwdRuleItem({ label: '包含数字 (0-9)', passed: /[0-9]/.test(this.password) })
+              PwdRuleItem({ label: '包含特殊符号 (!@#$...)', passed: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?~`]/.test(this.password) })
             }
             .width('85%')
             .padding({ left: 8, top: 4, bottom: 10 })
@@ -260,12 +291,13 @@ struct Login {
             .width('85%')
             .height(48)
             .borderRadius(24)
-            .backgroundColor(AppColors.PRIMARY)
+            .linearGradient({ direction: GradientDirection.Right, colors: [['#00b09b', 0.0], ['#96c93d', 1.0]] })
             .fontColor('#FFFFFF')
             .fontSize(17)
             .fontWeight(FontWeight.Medium)
             .margin({ top: 20 })
             .enabled(!this.loading)
+            .shadow({ radius: 10, color: '#2000b09b', offsetX: 0, offsetY: 4 })
             .onClick(() => { this.handleSubmit(); })
 
           // ===== 跳过登录 =====
@@ -274,7 +306,7 @@ struct Login {
             .fontColor(AppColors.TEXT_HINT)
             .margin({ top: 20, bottom: 30 })
             .onClick(() => {
-              router.pushUrl({ url: 'pages/Index' });
+              this.getUIContext().getRouter().pushUrl({ url: 'pages/Index' });
             })
         }
         .width('100%')
@@ -292,6 +324,8 @@ struct Login {
   @Builder
   pwdRule(label: string, passed: boolean) {
     Row() {
+      // 这里的 passed 参数在 ArkTS 某些版本中可能不会随底层数据自动刷新
+      // 通过在 label 和 passed 判断中强制引用全局 this.password 的计算结果来触发 UI 响应
       Text(passed ? '\u2713' : '\u2717')
         .fontSize(13)
         .fontColor(passed ? AppColors.PRIMARY : AppColors.WARN)

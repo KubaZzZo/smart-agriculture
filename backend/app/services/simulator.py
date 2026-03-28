@@ -3,6 +3,19 @@ import random
 from datetime import datetime
 from sqlalchemy.orm import Session
 from ..models import SensorData, Device
+from ..config import settings
+
+# 延迟导入 mqtt_client，避免循环依赖
+def _get_real_data():
+    """惰性获取 MQTT 真实数据，MQTT 未启用时直接返回 None。"""
+    if not settings.MQTT_ENABLED:
+        return None
+    try:
+        from .mqtt_client import get_real_data
+        return get_real_data()
+    except Exception:
+        return None
+
 
 # 数据范围
 RANGES = {
@@ -91,11 +104,30 @@ def _mean_revert(current: float, center: float, strength: float = 0.03) -> float
 
 
 def generate_sensor_data(db: Session, last_data: SensorData = None) -> SensorData:
-    """生成一条新的传感器数据，带自然波动和天气模拟"""
+    """
+    生成一条新的传感器数据。
+    优先级：① MQTT 真实数据  ② 物理模拟数据
+    """
     global _tick_count
     _tick_count += 1
     _update_weather()
 
+    # === 优先使用来自 Easy IoT 的真实传感器数据 ===
+    real = _get_real_data()
+    if real is not None and all(real[k] is not None for k in real):
+        data = SensorData(
+            temperature=round(real["temperature"], 1),
+            humidity=round(real["humidity"], 1),
+            light_intensity=round(real["light_intensity"], 1),
+            co2_level=round(real["co2_level"], 1),
+            soil_moisture=round(real["soil_moisture"], 1),
+        )
+        db.add(data)
+        db.commit()
+        db.refresh(data)
+        return data
+
+    # === 回退：物理模拟数据 ===
     devices = {d.device_type: d for d in db.query(Device).all()}
     weather = _weather_state["type"]
     w_intensity = _weather_state["intensity"]

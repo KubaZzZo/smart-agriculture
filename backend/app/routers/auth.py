@@ -58,14 +58,6 @@ def validate_password(password: str) -> str | None:
     """校验密码强度，返回错误信息或 None"""
     if len(password) < 8:
         return "密码长度至少8位"
-    if not re.search(r"[A-Z]", password):
-        return "密码必须包含大写字母"
-    if not re.search(r"[a-z]", password):
-        return "密码必须包含小写字母"
-    if not re.search(r"[0-9]", password):
-        return "密码必须包含数字"
-    if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>/?~`]", password):
-        return "密码必须包含特殊符号"
     return None
 
 

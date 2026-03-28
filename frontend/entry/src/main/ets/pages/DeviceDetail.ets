@@ -22,7 +22,7 @@ struct DeviceDetail {
   private deviceType: string = '';
 
   aboutToAppear(): void {
-    const params = router.getParams() as DeviceParams;
+    const params = this.getUIContext().getRouter().getParams() as DeviceParams;
     if (params) {
       this.deviceId = params.deviceId;
       this.deviceName = params.deviceName;
@@ -132,7 +132,7 @@ struct DeviceDetail {
         Text('< 返回')
           .fontSize(15)
           .fontColor(AppColors.PRIMARY)
-          .onClick(() => { router.back(); })
+          .onClick(() => { this.getUIContext().getRouter().back(); })
         Text(this.deviceName)
           .fontSize(18)
           .fontWeight(FontWeight.Bold)

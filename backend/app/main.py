@@ -17,6 +17,7 @@ from .services.simulator import generate_sensor_data
 from .services.alert_checker import check_alerts
 from .services.automation_engine import execute_automations
 from .config import settings
+from .services.mqtt_client import start_mqtt
 
 # 每日报告计数器（每天生成一次）
 _last_report_date = ""
@@ -102,6 +103,7 @@ async def simulation_loop():
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     Base.metadata.create_all(bind=engine)
+    start_mqtt()                                    # 启动 Easy IoT MQTT 订阅
     task = asyncio.create_task(simulation_loop())
     yield
     task.cancel()

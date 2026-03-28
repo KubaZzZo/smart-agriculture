@@ -25,7 +25,19 @@ export class ApiService {
         const result = JSON.parse(response.result as string) as T;
         return result;
       }
-      throw new Error(`HTTP ${response.responseCode}`);
+      let errorMsg = `HTTP ${response.responseCode}`;
+      try {
+        const errObj = JSON.parse(response.result as string) as Record<string, string>;
+        if (errObj && errObj.detail) {
+          errorMsg = errObj.detail;
+        }
+      } catch (e) { /* parse failed */ }
+      throw new Error(errorMsg);
+    } catch (err) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error(String(err));
     } finally {
       httpRequest.destroy();
     }
@@ -50,7 +62,19 @@ export class ApiService {
         const result = JSON.parse(response.result as string) as T;
         return result;
       }
-      throw new Error(`HTTP ${response.responseCode}`);
+      let errorMsg = `HTTP ${response.responseCode}`;
+      try {
+        const errObj = JSON.parse(response.result as string) as Record<string, string>;
+        if (errObj && errObj.detail) {
+          errorMsg = errObj.detail;
+        }
+      } catch (e) { /* parse failed */ }
+      throw new Error(errorMsg);
+    } catch (err) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error(String(err));
     } finally {
       httpRequest.destroy();
     }
@@ -75,7 +99,19 @@ export class ApiService {
         const result = JSON.parse(response.result as string) as T;
         return result;
       }
-      throw new Error(`HTTP ${response.responseCode}`);
+      let errorMsg = `HTTP ${response.responseCode}`;
+      try {
+        const errObj = JSON.parse(response.result as string) as Record<string, string>;
+        if (errObj && errObj.detail) {
+          errorMsg = errObj.detail;
+        }
+      } catch (e) { /* parse failed */ }
+      throw new Error(errorMsg);
+    } catch (err) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error(String(err));
     } finally {
       httpRequest.destroy();
     }
@@ -99,7 +135,19 @@ export class ApiService {
         const result = JSON.parse(response.result as string) as T;
         return result;
       }
-      throw new Error(`HTTP ${response.responseCode}`);
+      let errorMsg = `HTTP ${response.responseCode}`;
+      try {
+        const errObj = JSON.parse(response.result as string) as Record<string, string>;
+        if (errObj && errObj.detail) {
+          errorMsg = errObj.detail;
+        }
+      } catch (e) { /* parse failed */ }
+      throw new Error(errorMsg);
+    } catch (err) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error(String(err));
     } finally {
       httpRequest.destroy();
     }

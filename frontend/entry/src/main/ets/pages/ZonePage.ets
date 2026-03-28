@@ -61,7 +61,7 @@ struct ZonePage {
     Column() {
       Row() {
         Text('< 返回').fontSize(15).fontColor(AppColors.PRIMARY)
-          .onClick(() => { router.back(); })
+          .onClick(() => { this.getUIContext().getRouter().back(); })
         Text('区域管理').fontSize(18).fontWeight(FontWeight.Bold)
           .fontColor(AppColors.TEXT_PRIMARY).margin({ left: 12 })
         Blank()

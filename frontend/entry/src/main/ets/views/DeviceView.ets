@@ -8,6 +8,7 @@ import { router } from '@kit.ArkUI';
 export struct DeviceView {
   @State devices: DeviceInfo[] = [];
   @State loading: boolean = true;
+  @State refreshAngle: number = 0;
 
   aboutToAppear(): void {
     this.loadDevices();
@@ -15,6 +16,7 @@ export struct DeviceView {
 
   async loadDevices(): Promise<void> {
     this.loading = true;
+    this.refreshAngle += 360;
     try {
       this.devices = await ApiService.get<DeviceInfo[]>(ApiConstants.DEVICE_LIST);
     } catch (e) {
@@ -86,6 +88,8 @@ export struct DeviceView {
           .fontSize(22)
           .fontColor([AppColors.TEXT_SECONDARY])
           .padding(8)
+          .rotate({ angle: this.refreshAngle })
+          .animation({ duration: 800, curve: Curve.EaseInOut })
           .onClick(() => { this.loadDevices(); })
       }
       .width('100%')
@@ -129,7 +133,7 @@ export struct DeviceView {
             .borderRadius(12)
             .shadow({ radius: 4, color: '#1A000000', offsetX: 0, offsetY: 2 })
             .onClick(() => {
-              router.pushUrl({
+              this.getUIContext().getRouter().pushUrl({
                 url: 'pages/DeviceDetail',
                 params: { deviceId: device.id, deviceName: device.device_name, deviceType: device.device_type }
               });

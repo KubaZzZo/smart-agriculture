@@ -9,6 +9,7 @@ export struct MonitorView {
   @State historyList: SensorData[] = [];
   @State loading: boolean = true;
   @State selectedMetric: string = 'temperature';
+  @State refreshAngle: number = 0;
 
   aboutToAppear(): void {
     this.loadData();
@@ -16,6 +17,7 @@ export struct MonitorView {
 
   async loadData(): Promise<void> {
     this.loading = true;
+    this.refreshAngle += 360;
     try {
       const latest = await ApiService.get<SensorData>(ApiConstants.SENSOR_LATEST);
       this.latestData = latest;
@@ -94,6 +96,8 @@ export struct MonitorView {
           .fontSize(22)
           .fontColor([AppColors.TEXT_SECONDARY])
           .padding(8)
+          .rotate({ angle: this.refreshAngle })
+          .animation({ duration: 800, curve: Curve.EaseInOut })
           .onClick(() => { this.loadData(); })
       }
       .width('100%')

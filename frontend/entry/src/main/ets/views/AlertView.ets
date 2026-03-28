@@ -9,6 +9,7 @@ export struct AlertView {
   @State logs: AlertLog[] = [];
   @State showRules: boolean = true;
   @State loading: boolean = true;
+  @State refreshAngle: number = 0;
 
   aboutToAppear(): void {
     this.loadData();
@@ -16,6 +17,7 @@ export struct AlertView {
 
   async loadData(): Promise<void> {
     this.loading = true;
+    this.refreshAngle += 360;
     try {
       this.rules = await ApiService.get<AlertRule[]>(ApiConstants.ALERT_RULES);
       const logRes = await ApiService.get<AlertLogListResponse>(ApiConstants.ALERT_LOGS,
@@ -84,6 +86,8 @@ export struct AlertView {
           .fontSize(22)
           .fontColor([AppColors.TEXT_SECONDARY])
           .padding(8)
+          .rotate({ angle: this.refreshAngle })
+          .animation({ duration: 800, curve: Curve.EaseInOut })
           .onClick(() => { this.loadData(); })
       }
       .width('100%')
@@ -134,8 +138,9 @@ export struct AlertView {
               .width('100%')
               .padding(14)
               .backgroundColor(AppColors.CARD_BG)
+              .backdropBlur(20)
               .borderRadius(12)
-              .shadow({ radius: 4, color: '#1A000000', offsetX: 0, offsetY: 2 })
+              .shadow({ radius: 12, color: '#08000000', offsetX: 0, offsetY: 4 })
             }
           })
         }
@@ -175,8 +180,10 @@ export struct AlertView {
               }
               .width('100%')
               .padding(12)
-              .backgroundColor(log.is_read === 0 ? AppColors.WARN_LIGHT : AppColors.CARD_BG)
+              .backgroundColor(log.is_read === 0 ? '#1AEBEE' : AppColors.CARD_BG)
+              .backdropBlur(15)
               .borderRadius(10)
+              .shadow({ radius: 8, color: '#06000000', offsetX: 0, offsetY: 2 })
             }
           })
         }

@@ -1,5 +1,6 @@
 // 智慧农业 - 首页仪表盘视图
 import { router } from '@kit.ArkUI';
+import { webSocket } from '@kit.NetworkKit';
 import { ApiService } from '../common/ApiService';
 import { ApiConstants, AppColors, MetricNames } from '../common/Constants';
 import { SystemOverview, SensorData, WeatherInfo } from '../model/DataModels';
@@ -9,13 +10,57 @@ export struct DashboardView {
   @State overview: SystemOverview | null = null;
   @State latestSensor: SensorData | null = null;
   @State loading: boolean = true;
+  @State refreshAngle: number = 0;
+  ws: webSocket.WebSocket | null = null;
 
   aboutToAppear(): void {
     this.loadData();
+    this.initWebSocket();
+  }
+
+  aboutToDisappear(): void {
+    if (this.ws) {
+      this.ws.close();
+    }
+  }
+
+  initWebSocket(): void {
+    this.ws = webSocket.createWebSocket();
+    this.ws.on('open', (err, value) => {
+      console.info('[DashboardWS] WebSocket connection opened');
+    });
+    this.ws.on('message', (err, value) => {
+      if (typeof value === 'string') {
+        try {
+          const msg = JSON.parse(value);
+          if (msg.type === 'sensor_data' && msg.data) {
+            this.latestSensor = msg.data as SensorData;
+            console.info('[DashboardWS] Received sensor data update');
+          }
+        } catch (e) {
+          console.error('[DashboardWS] Failed to parse message', e);
+        }
+      }
+    });
+    this.ws.on('error', (err) => {
+      console.error('[DashboardWS] WebSocket error', err);
+    });
+    this.ws.on('close', (err, value) => {
+      console.info('[DashboardWS] WebSocket connection closed');
+    });
+
+    this.ws.connect(ApiConstants.WS_URL, (err, value) => {
+      if (!err) {
+        console.info('[DashboardWS] Connect success');
+      } else {
+        console.error('[DashboardWS] Connect failed', err);
+      }
+    });
   }
 
   async loadData(): Promise<void> {
     this.loading = true;
+    this.refreshAngle += 360; // 每次点击旋转一圈
     // 立即设置模拟数据，确保UI有内容
     const mockSensor: SensorData = {
       id: 0, temperature: 25.6, humidity: 62.3,
@@ -59,6 +104,8 @@ export struct DashboardView {
             Blank()
             SymbolGlyph($r('sys.symbol.arrow_clockwise'))
               .fontSize(22).fontColor(['#FFFFFF'])
+              .rotate({ angle: this.refreshAngle })
+              .animation({ duration: 800, curve: Curve.EaseInOut })
               .onClick(() => { this.loadData(); })
           }
           .width('100%')
@@ -76,7 +123,7 @@ export struct DashboardView {
                 .fontSize(12).fontColor('#FFFFFF')
             }
             .padding({ left: 10, right: 10, top: 5, bottom: 5 })
-            .backgroundColor('#FFFFFF30')
+            .backgroundColor('#33FFFFFF')
             .borderRadius(14)
 
             Row() {
@@ -86,7 +133,7 @@ export struct DashboardView {
                 .fontSize(12).fontColor('#FFFFFF')
             }
             .padding({ left: 10, right: 10, top: 5, bottom: 5 })
-            .backgroundColor('#FFFFFF30')
+            .backgroundColor('#33FFFFFF')
             .borderRadius(14)
             .margin({ left: 10 })
 
@@ -99,7 +146,7 @@ export struct DashboardView {
         }
         .width('100%')
         .padding({ left: 20, right: 20, top: 16, bottom: 24 })
-        .backgroundColor('#1B5E20')
+        .linearGradient({ direction: GradientDirection.Right, colors: [['#00b09b', 0.0], ['#96c93d', 1.0]] })
         .borderRadius({ bottomLeft: 24, bottomRight: 24 })
 
         // ===== 环境数据卡片 =====
@@ -154,8 +201,9 @@ export struct DashboardView {
         .padding(18)
         .margin({ left: 14, right: 14, top: -12 })
         .backgroundColor(AppColors.CARD_BG)
+        .backdropBlur(20)
         .borderRadius(16)
-        .shadow({ radius: 8, color: '#1A000000', offsetX: 0, offsetY: 4 })
+        .shadow({ radius: 16, color: '#08000000', offsetX: 0, offsetY: 8 })
 
         // ===== 快捷操作 =====
         Text('快捷操作')
@@ -226,12 +274,13 @@ export struct DashboardView {
     }
     .width(100).height(95)
     .backgroundColor(AppColors.CARD_BG)
+    .backdropBlur(15)
     .borderRadius(16)
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
-    .shadow({ radius: 4, color: '#0D000000', offsetX: 0, offsetY: 2 })
+    .shadow({ radius: 10, color: '#0A000000', offsetX: 0, offsetY: 4 })
     .onClick(() => {
-      router.pushUrl({ url: page });
+      this.getUIContext().getRouter().pushUrl({ url: page });
     })
   }
 }

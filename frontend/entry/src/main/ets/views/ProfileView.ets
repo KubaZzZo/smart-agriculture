@@ -5,8 +5,9 @@ import { AppColors } from '../common/Constants';
 
 @Component
 export struct ProfileView {
-  @StorageProp('username') username: string = '未登录';
+  @StorageProp('username') username: string = '';
   @StorageProp('userRole') userRole: string = '';
+  @StorageProp('isLoggedIn') isLoggedIn: boolean = false;
 
   @Builder
   menuItem(icon: string, title: string, page: string) {
@@ -26,7 +27,7 @@ export struct ProfileView {
     .padding({ left: 16, right: 16, top: 14, bottom: 14 })
     .backgroundColor(AppColors.CARD_BG)
     .onClick(() => {
-      router.pushUrl({ url: page });
+      this.getUIContext().getRouter().pushUrl({ url: page });
     })
   }
 
@@ -64,6 +65,11 @@ export struct ProfileView {
         .backgroundColor(AppColors.CARD_BG)
         .borderRadius(12)
         .shadow({ radius: 4, color: '#1A000000', offsetX: 0, offsetY: 2 })
+        .onClick(() => {
+          if (!this.isLoggedIn) {
+            this.getUIContext().getRouter().pushUrl({ url: 'pages/Login' });
+          }
+        })
 
         // 功能菜单
         Text('农业管理')
@@ -111,9 +117,10 @@ export struct ProfileView {
           .fontColor(AppColors.WARN)
           .fontSize(15)
           .margin({ top: 30, bottom: 30 })
+          .visibility(this.isLoggedIn ? Visibility.Visible : Visibility.Hidden)
           .onClick(() => {
             ApiService.clearToken();
-            router.pushUrl({ url: 'pages/Login' });
+            this.getUIContext().getRouter().pushUrl({ url: 'pages/Login' });
           })
       }
       .width('100%')
