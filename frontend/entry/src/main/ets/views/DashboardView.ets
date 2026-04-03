@@ -1,237 +1,244 @@
-// 智慧农业 - 首页仪表盘视图
-import { router } from '@kit.ArkUI';
+﻿import { router } from '@kit.ArkUI';
 import { ApiService } from '../common/ApiService';
-import { ApiConstants, AppColors, MetricNames } from '../common/Constants';
-import { SystemOverview, SensorData, WeatherInfo } from '../model/DataModels';
+import { ApiConstants, AppColors, AppConfig } from '../common/Constants';
+import { SystemOverview, SensorData } from '../model/DataModels';
+import { realtimeService } from '../common/RealtimeService';
 
 @Component
 export struct DashboardView {
   @State overview: SystemOverview | null = null;
   @State latestSensor: SensorData | null = null;
   @State loading: boolean = true;
+  @State errorMsg: string = '';
+  private unsubscribeRealtime: (() => void) | null = null;
 
   aboutToAppear(): void {
     this.loadData();
+    this.bindRealtime();
+  }
+
+  aboutToDisappear(): void {
+    if (this.unsubscribeRealtime) {
+      this.unsubscribeRealtime();
+      this.unsubscribeRealtime = null;
+    }
+  }
+
+  private applyMockData(): void {
+    const mockSensor: SensorData = {
+      id: 0,
+      temperature: 25.6,
+      humidity: 62.3,
+      light_intensity: 32000,
+      co2_level: 520,
+      soil_moisture: 45.8,
+      created_at: new Date().toISOString(),
+    };
+    this.latestSensor = mockSensor;
+    this.overview = {
+      device_total: 5,
+      device_online: 3,
+      alert_today: 1,
+      latest_sensor: mockSensor,
+    };
   }
 
   async loadData(): Promise<void> {
     this.loading = true;
-    // 立即设置模拟数据，确保UI有内容
-    const mockSensor: SensorData = {
-      id: 0, temperature: 25.6, humidity: 62.3,
-      light_intensity: 32000, co2_level: 520, soil_moisture: 45.8,
-      created_at: new Date().toISOString()
-    };
-    if (!this.latestSensor) {
-      this.latestSensor = mockSensor;
-    }
-    if (!this.overview) {
-      const mockOverview: SystemOverview = {
-        device_total: 5, device_online: 3, alert_today: 1, latest_sensor: mockSensor
-      };
-      this.overview = mockOverview;
-    }
+    this.errorMsg = '';
+
     try {
-      const ov = await ApiService.get<SystemOverview>(ApiConstants.SYSTEM_OVERVIEW);
+      const ov: SystemOverview = await ApiService.get<SystemOverview>(ApiConstants.SYSTEM_OVERVIEW);
       this.overview = ov;
       if (ov.latest_sensor) {
         this.latestSensor = ov.latest_sensor;
       }
-    } catch (e) {
-      // 已有模拟数据，无需额外处理
+    } catch (_e) {
+      this.errorMsg = '加载首页数据失败';
+      if (AppConfig.ENABLE_OFFLINE_MOCK) {
+        this.applyMockData();
+      }
     } finally {
       this.loading = false;
     }
   }
 
-  build() {
+  bindRealtime(): void {
+    if (this.unsubscribeRealtime) {
+      this.unsubscribeRealtime();
+    }
+    this.unsubscribeRealtime = realtimeService.subscribeSensorData((sensor: SensorData): void => {
+      this.latestSensor = sensor;
+      if (this.overview) {
+        this.overview = {
+          device_total: this.overview.device_total,
+          device_online: this.overview.device_online,
+          alert_today: this.overview.alert_today,
+          latest_sensor: sensor,
+        };
+      }
+    });
+  }
+
+  build(): void {
     Scroll() {
       Column() {
-        // ===== 顶部绿色横幅 =====
         Column() {
           Row() {
-            Row() {
-              SymbolGlyph($r('sys.symbol.leaf'))
-                .fontSize(22).fontColor(['#A5D6A7']).margin({ right: 6 })
-              Text('智慧农业')
-                .fontSize(24).fontWeight(FontWeight.Bold).fontColor('#FFFFFF')
+            Column() {
+              Text('温室控制台')
+                .fontSize(24)
+                .fontWeight(FontWeight.Bold)
+                .fontColor('#FFFFFF');
+              Text('环境与设备实时协同')
+                .fontSize(12)
+                .fontColor('#D6EBDD')
+                .margin({ top: 4 });
             }
-            Blank()
+            .alignItems(HorizontalAlign.Start);
+
+            Blank();
+
             SymbolGlyph($r('sys.symbol.arrow_clockwise'))
-              .fontSize(22).fontColor(['#FFFFFF'])
-              .onClick(() => { this.loadData(); })
+              .fontSize(22)
+              .fontColor(['#FFFFFF'])
+              .padding(8)
+              .backgroundColor('#1FFFFFFF')
+              .borderRadius(20)
+              .onClick((): void => {
+                this.loadData();
+              });
+          }
+          .width('100%');
+
+          Row() {
+            this.headChip('在线设备', `${this.overview?.device_online || 0}/${this.overview?.device_total || 0}`);
+            this.headChip('今日告警', `${this.overview?.alert_today || 0}`);
+            this.headChip('同步状态', this.loading ? '更新中' : '实时');
           }
           .width('100%')
+          .justifyContent(FlexAlign.SpaceBetween)
+          .margin({ top: 14 });
+        }
+        .width('100%')
+        .padding({ left: 16, right: 16, top: 16, bottom: 22 })
+        .backgroundColor(AppColors.PRIMARY_DARK)
+        .borderRadius({ bottomLeft: 24, bottomRight: 24 });
 
-          Text('实时监控 · 智能控制')
-            .fontSize(11).fontColor('#A5D6A7').margin({ top: 3 })
+        if (this.errorMsg) {
+          Text(this.errorMsg)
+            .fontSize(12)
+            .fontColor(AppColors.WARN)
             .width('100%')
-
-          // 系统状态胶囊
-          Row() {
-            Row() {
-              SymbolGlyph($r('sys.symbol.wifi'))
-                .fontSize(13).fontColor(['#FFFFFF'])
-              Text(` ${this.overview ? this.overview.device_online.toString() : '-'}/${this.overview ? this.overview.device_total.toString() : '-'} 在线`)
-                .fontSize(12).fontColor('#FFFFFF')
-            }
-            .padding({ left: 10, right: 10, top: 5, bottom: 5 })
-            .backgroundColor('#FFFFFF30')
-            .borderRadius(14)
-
-            Row() {
-              SymbolGlyph($r('sys.symbol.bell'))
-                .fontSize(13).fontColor(['#FFFFFF'])
-              Text(` ${this.overview ? this.overview.alert_today.toString() : '-'} 预警`)
-                .fontSize(12).fontColor('#FFFFFF')
-            }
-            .padding({ left: 10, right: 10, top: 5, bottom: 5 })
-            .backgroundColor('#FFFFFF30')
-            .borderRadius(14)
-            .margin({ left: 10 })
-
-            Blank()
-            Text(new Date().getMonth() + 1 + '月' + new Date().getDate() + '日')
-              .fontSize(12).fontColor('#A5D6A7')
-          }
-          .width('100%')
-          .margin({ top: 16 })
+            .padding({ left: 16, right: 16, top: 10 });
         }
-        .width('100%')
-        .padding({ left: 20, right: 20, top: 16, bottom: 24 })
-        .backgroundColor('#1B5E20')
-        .borderRadius({ bottomLeft: 24, bottomRight: 24 })
 
-        // ===== 环境数据卡片 =====
         Column() {
-          Row() {
-            Text('实时环境')
-              .fontSize(15).fontWeight(FontWeight.Medium).fontColor(AppColors.TEXT_PRIMARY)
-            Blank()
-            Text('刚刚更新')
-              .fontSize(11).fontColor(AppColors.TEXT_HINT)
-          }
-          .width('100%').margin({ bottom: 16 })
+          Text('环境概览')
+            .fontSize(15)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(AppColors.TEXT_PRIMARY)
+            .width('100%')
+            .margin({ bottom: 10 });
 
-          // 温度 + 湿度
-          Row() {
-            this.envMetric($r('sys.symbol.thermometer'), '温度',
-              this.latestSensor ? this.latestSensor.temperature.toFixed(1) : '--',
-              '°C', AppColors.TEMP_COLOR)
-            Column().width(1).height(36).backgroundColor(AppColors.DIVIDER)
-              .margin({ left: 8, right: 8 })
-            this.envMetric($r('sys.symbol.drop'), '湿度',
-              this.latestSensor ? this.latestSensor.humidity.toFixed(1) : '--',
-              '%', AppColors.HUMIDITY_COLOR)
-          }.width('100%')
-
-          Divider().color(AppColors.DIVIDER).margin({ top: 12, bottom: 12 })
-
-          // 光照 + CO₂
-          Row() {
-            this.envMetric($r('sys.symbol.sun_max'), '光照',
-              this.latestSensor ? this.latestSensor.light_intensity.toFixed(0) : '--',
-              'Lux', AppColors.LIGHT_COLOR)
-            Column().width(1).height(36).backgroundColor(AppColors.DIVIDER)
-              .margin({ left: 8, right: 8 })
-            this.envMetric($r('sys.symbol.cloud'), 'CO₂',
-              this.latestSensor ? this.latestSensor.co2_level.toFixed(0) : '--',
-              'ppm', AppColors.CO2_COLOR)
-          }.width('100%')
-
-          Divider().color(AppColors.DIVIDER).margin({ top: 12, bottom: 12 })
-
-          // 土壤湿度
-          Row() {
-            Blank()
-            this.envMetric($r('sys.symbol.leaf'), '土壤湿度',
-              this.latestSensor ? this.latestSensor.soil_moisture.toFixed(1) : '--',
-              '%', AppColors.SOIL_COLOR)
-            Blank()
-          }.width('100%')
+          this.metricCard('温度', this.latestSensor ? this.latestSensor.temperature.toFixed(1) : '--', '℃', AppColors.TEMP_COLOR);
+          this.metricCard('湿度', this.latestSensor ? this.latestSensor.humidity.toFixed(1) : '--', '%', AppColors.HUMIDITY_COLOR);
+          this.metricCard('光照强度', this.latestSensor ? this.latestSensor.light_intensity.toFixed(0) : '--', '勒克斯', AppColors.LIGHT_COLOR);
+          this.metricCard('二氧化碳', this.latestSensor ? this.latestSensor.co2_level.toFixed(0) : '--', '百万分率', AppColors.CO2_COLOR);
+          this.metricCard('土壤湿度', this.latestSensor ? this.latestSensor.soil_moisture.toFixed(1) : '--', '%', AppColors.SOIL_COLOR);
         }
         .width('100%')
-        .padding(18)
-        .margin({ left: 14, right: 14, top: -12 })
+        .padding(14)
+        .margin({ left: 12, right: 12, top: 12 })
         .backgroundColor(AppColors.CARD_BG)
         .borderRadius(16)
-        .shadow({ radius: 8, color: '#1A000000', offsetX: 0, offsetY: 4 })
+        .shadow({ radius: 8, color: '#12000000', offsetX: 0, offsetY: 4 });
 
-        // ===== 快捷操作 =====
         Text('快捷操作')
-          .fontSize(15).fontWeight(FontWeight.Medium)
+          .fontSize(15)
+          .fontWeight(FontWeight.Medium)
           .fontColor(AppColors.TEXT_PRIMARY)
-          .margin({ top: 22, bottom: 12 })
-          .padding({ left: 16 }).width('100%')
+          .width('100%')
+          .padding({ left: 16 })
+          .margin({ top: 18, bottom: 10 });
 
         Row() {
-          this.actionCard($r('sys.symbol.drop'), '智能灌溉', '#E3F2FD', '#1565C0', 'pages/IrrigationPage')
-          this.actionCard($r('sys.symbol.sun_max'), '智能光照', '#FFF3E0', '#EF6C00', 'pages/LightingPage')
-          this.actionCard($r('sys.symbol.link'), '联动规则', '#F3E5F5', '#7B1FA2', 'pages/AutomationPage')
+          this.actionCard('灌溉', $r('sys.symbol.drop'), 'pages/IrrigationPage');
+          this.actionCard('光照', $r('sys.symbol.sun_max'), 'pages/LightingPage');
+          this.actionCard('联动', $r('sys.symbol.link'), 'pages/AutomationPage');
         }
-        .width('100%').justifyContent(FlexAlign.SpaceEvenly)
-        .padding({ left: 10, right: 10 })
-
-        Row() {
-          this.actionCard($r('sys.symbol.leaf'), '作物管理', '#E8F5E9', '#2E7D32', 'pages/CropPage')
-          this.actionCard($r('sys.symbol.house'), '区域管理', '#FBE9E7', '#BF360C', 'pages/ZonePage')
-          this.actionCard($r('sys.symbol.doc_text'), '数据报告', '#E0F2F1', '#00695C', 'pages/ReportPage')
-        }
-        .width('100%').justifyContent(FlexAlign.SpaceEvenly)
-        .padding({ left: 10, right: 10 })
-        .margin({ top: 10, bottom: 24 })
+        .width('100%')
+        .justifyContent(FlexAlign.SpaceEvenly)
+        .padding({ bottom: 20 });
       }
-      .width('100%')
+      .width('100%');
     }
     .width('100%')
     .height('100%')
-    .scrollBar(BarState.Off)
     .backgroundColor(AppColors.BG)
+    .scrollBar(BarState.Off);
   }
 
   @Builder
-  envMetric(icon: Resource, label: string, value: string, unit: string, color: string) {
-    Row() {
-      SymbolGlyph(icon)
-        .fontSize(22).fontColor([color]).margin({ right: 8 })
-      Column() {
-        Text(label).fontSize(11).fontColor(AppColors.TEXT_HINT)
-        Row() {
-          Text(value).fontSize(22).fontWeight(FontWeight.Bold).fontColor(color)
-          Text(` ${unit}`).fontSize(11).fontColor(AppColors.TEXT_SECONDARY)
-            .margin({ top: 6 })
-        }
-      }
-      .alignItems(HorizontalAlign.Start)
-    }
-    .layoutWeight(1)
-  }
-
-  @Builder
-  actionCard(icon: Resource, label: string, bgColor: string, iconColor: string, page: string) {
+  headChip(label: string, value: string): void {
     Column() {
-      Column() {
-        SymbolGlyph(icon)
-          .fontSize(26).fontColor([iconColor])
-      }
-      .width(50).height(50)
-      .backgroundColor(bgColor)
-      .borderRadius(14)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-
       Text(label)
-        .fontSize(12).fontColor(AppColors.TEXT_PRIMARY)
-        .margin({ top: 8 })
+        .fontSize(10)
+        .fontColor('#C9E7D4');
+      Text(value)
+        .fontSize(14)
+        .fontWeight(FontWeight.Bold)
+        .fontColor('#FFFFFF')
+        .margin({ top: 2 });
     }
-    .width(100).height(95)
+    .padding({ left: 10, right: 10, top: 8, bottom: 8 })
+    .backgroundColor('#1AFFFFFF')
+    .borderRadius(12)
+    .width(104)
+    .alignItems(HorizontalAlign.Start);
+  }
+
+  @Builder
+  metricCard(label: string, value: string, unit: string, color: string): void {
+    Row() {
+      Text(label)
+        .fontSize(14)
+        .fontColor(AppColors.TEXT_SECONDARY)
+        .layoutWeight(1);
+      Text(value)
+        .fontSize(22)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(color);
+      Text(` ${unit}`)
+        .fontSize(12)
+        .fontColor(AppColors.TEXT_SECONDARY)
+        .margin({ top: 5 });
+    }
+    .width('100%')
+    .padding({ top: 12, bottom: 12 })
+    .border({ width: { bottom: 0.5 }, color: AppColors.DIVIDER });
+  }
+
+  @Builder
+  actionCard(label: string, icon: Resource, page: string): void {
+    Column() {
+      SymbolGlyph(icon)
+        .fontSize(24)
+        .fontColor([AppColors.PRIMARY]);
+      Text(label)
+        .fontSize(12)
+        .fontColor(AppColors.TEXT_PRIMARY)
+        .margin({ top: 8 });
+    }
+    .width(104)
+    .height(86)
     .backgroundColor(AppColors.CARD_BG)
-    .borderRadius(16)
+    .borderRadius(14)
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
-    .shadow({ radius: 4, color: '#0D000000', offsetX: 0, offsetY: 2 })
-    .onClick(() => {
+    .shadow({ radius: 6, color: '#14000000', offsetX: 0, offsetY: 3 })
+    .onClick((): void => {
       router.pushUrl({ url: page });
-    })
+    });
   }
 }

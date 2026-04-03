@@ -1,8 +1,9 @@
-CREATE DATABASE IF NOT EXISTS smart_agriculture DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS smart_agriculture
+  DEFAULT CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
 
 USE smart_agriculture;
 
--- 传感器数据表
 CREATE TABLE IF NOT EXISTS sensor_data (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     temperature FLOAT NOT NULL,
@@ -13,7 +14,6 @@ CREATE TABLE IF NOT EXISTS sensor_data (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 设备状态表
 CREATE TABLE IF NOT EXISTS device (
     id INT PRIMARY KEY AUTO_INCREMENT,
     device_name VARCHAR(100) NOT NULL,
@@ -21,10 +21,10 @@ CREATE TABLE IF NOT EXISTS device (
     status TINYINT DEFAULT 0,
     params JSON,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_device_type (device_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 预警规则表
 CREATE TABLE IF NOT EXISTS alert_rule (
     id INT PRIMARY KEY AUTO_INCREMENT,
     metric_name VARCHAR(30) NOT NULL,
@@ -32,10 +32,10 @@ CREATE TABLE IF NOT EXISTS alert_rule (
     max_value FLOAT NOT NULL,
     is_enabled TINYINT DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_alert_metric_name (metric_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 预警记录表
 CREATE TABLE IF NOT EXISTS alert_log (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     rule_id INT NOT NULL,
@@ -47,7 +47,6 @@ CREATE TABLE IF NOT EXISTS alert_log (
     FOREIGN KEY (rule_id) REFERENCES alert_rule(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 联动规则表
 CREATE TABLE IF NOT EXISTS automation_rule (
     id INT PRIMARY KEY AUTO_INCREMENT,
     trigger_metric VARCHAR(30) NOT NULL,
@@ -62,7 +61,6 @@ CREATE TABLE IF NOT EXISTS automation_rule (
     FOREIGN KEY (action_device_id) REFERENCES device(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 设备操作记录表
 CREATE TABLE IF NOT EXISTS device_log (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     device_id INT NOT NULL,
@@ -73,7 +71,6 @@ CREATE TABLE IF NOT EXISTS device_log (
     FOREIGN KEY (device_id) REFERENCES device(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 定时任务表
 CREATE TABLE IF NOT EXISTS scheduled_task (
     id INT PRIMARY KEY AUTO_INCREMENT,
     task_name VARCHAR(100) NOT NULL,
@@ -89,17 +86,16 @@ CREATE TABLE IF NOT EXISTS scheduled_task (
     FOREIGN KEY (device_id) REFERENCES device(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 区域/大棚表
 CREATE TABLE IF NOT EXISTS zone (
     id INT PRIMARY KEY AUTO_INCREMENT,
     zone_name VARCHAR(100) NOT NULL,
     zone_type VARCHAR(30) NOT NULL DEFAULT 'greenhouse',
     description VARCHAR(255) DEFAULT '',
     is_active TINYINT DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_zone_name (zone_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 区域-设备关联表
 CREATE TABLE IF NOT EXISTS zone_device (
     id INT PRIMARY KEY AUTO_INCREMENT,
     zone_id INT NOT NULL,
@@ -109,7 +105,6 @@ CREATE TABLE IF NOT EXISTS zone_device (
     UNIQUE KEY uk_zone_device (zone_id, device_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 用户表
 CREATE TABLE IF NOT EXISTS user (
     id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -118,7 +113,6 @@ CREATE TABLE IF NOT EXISTS user (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 作物管理表
 CREATE TABLE IF NOT EXISTS crop (
     id INT PRIMARY KEY AUTO_INCREMENT,
     crop_name VARCHAR(100) NOT NULL,
@@ -136,7 +130,6 @@ CREATE TABLE IF NOT EXISTS crop (
     FOREIGN KEY (zone_id) REFERENCES zone(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 每日报告表
 CREATE TABLE IF NOT EXISTS daily_report (
     id INT PRIMARY KEY AUTO_INCREMENT,
     report_date VARCHAR(10) NOT NULL UNIQUE,
@@ -152,7 +145,6 @@ CREATE TABLE IF NOT EXISTS daily_report (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 用水量记录表
 CREATE TABLE IF NOT EXISTS water_usage (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     device_id INT NOT NULL,
@@ -163,31 +155,191 @@ CREATE TABLE IF NOT EXISTS water_usage (
     FOREIGN KEY (device_id) REFERENCES device(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 初始设备数据
-INSERT INTO device (device_name, device_type, status, params) VALUES
-('水阀', 'valve', 0, '{"flow_rate": 0}'),
-('水泵', 'pump', 0, '{"flow_rate": 0}'),
-('LED补光灯', 'led', 0, '{"brightness": 0}'),
-('监控摄像头', 'camera', 1, '{}'),
-('通风风扇', 'fan', 0, '{"speed": 0}');
+CREATE TABLE IF NOT EXISTS auth_audit_log (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    event_type VARCHAR(30) NOT NULL,
+    username VARCHAR(50) DEFAULT '',
+    ip VARCHAR(64) DEFAULT '',
+    status VARCHAR(20) DEFAULT 'ok',
+    reason VARCHAR(255) DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 默认预警规则
-INSERT INTO alert_rule (metric_name, min_value, max_value, is_enabled) VALUES
-('temperature', 15, 35, 1),
-('humidity', 40, 80, 1),
-('light_intensity', 2000, 80000, 1),
-('co2_level', 400, 1500, 1),
-('soil_moisture', 20, 70, 1);
+INSERT INTO device (device_name, device_type, status, params)
+SELECT 'Water Valve', 'valve', 0, '{"flow_rate": 0}'
+WHERE NOT EXISTS (SELECT 1 FROM device WHERE device_type = 'valve');
+INSERT INTO device (device_name, device_type, status, params)
+SELECT 'Water Pump', 'pump', 0, '{"flow_rate": 0}'
+WHERE NOT EXISTS (SELECT 1 FROM device WHERE device_type = 'pump');
+INSERT INTO device (device_name, device_type, status, params)
+SELECT 'LED Grow Light', 'led', 0, '{"brightness": 0}'
+WHERE NOT EXISTS (SELECT 1 FROM device WHERE device_type = 'led');
+INSERT INTO device (device_name, device_type, status, params)
+SELECT 'Camera', 'camera', 1, '{}'
+WHERE NOT EXISTS (SELECT 1 FROM device WHERE device_type = 'camera');
+INSERT INTO device (device_name, device_type, status, params)
+SELECT 'Ventilation Fan', 'fan', 0, '{"speed": 0}'
+WHERE NOT EXISTS (SELECT 1 FROM device WHERE device_type = 'fan');
 
--- 默认联动规则
-INSERT INTO automation_rule (trigger_metric, trigger_condition, trigger_value, action_device_id, action_type, action_params, is_enabled) VALUES
-('soil_moisture', 'lt', 30, 2, 'on', '{}', 1),
-('soil_moisture', 'gt', 70, 2, 'off', '{}', 1),
-('light_intensity', 'lt', 5000, 3, 'on', '{"brightness": 80}', 1),
-('co2_level', 'gt', 1000, 5, 'on', '{"speed": 100}', 1),
-('co2_level', 'lt', 600, 5, 'off', '{}', 1);
+INSERT INTO alert_rule (metric_name, min_value, max_value, is_enabled)
+SELECT 'temperature', 15, 35, 1
+WHERE NOT EXISTS (SELECT 1 FROM alert_rule WHERE metric_name = 'temperature');
+INSERT INTO alert_rule (metric_name, min_value, max_value, is_enabled)
+SELECT 'humidity', 40, 80, 1
+WHERE NOT EXISTS (SELECT 1 FROM alert_rule WHERE metric_name = 'humidity');
+INSERT INTO alert_rule (metric_name, min_value, max_value, is_enabled)
+SELECT 'light_intensity', 2000, 80000, 1
+WHERE NOT EXISTS (SELECT 1 FROM alert_rule WHERE metric_name = 'light_intensity');
+INSERT INTO alert_rule (metric_name, min_value, max_value, is_enabled)
+SELECT 'co2_level', 400, 1500, 1
+WHERE NOT EXISTS (SELECT 1 FROM alert_rule WHERE metric_name = 'co2_level');
+INSERT INTO alert_rule (metric_name, min_value, max_value, is_enabled)
+SELECT 'soil_moisture', 20, 70, 1
+WHERE NOT EXISTS (SELECT 1 FROM alert_rule WHERE metric_name = 'soil_moisture');
 
--- 默认区域
-INSERT INTO zone (zone_name, zone_type, description) VALUES
-('1号温室大棚', 'greenhouse', '主要种植区'),
-('露天试验田', 'field', '露天种植试验区');
+INSERT INTO automation_rule (
+    trigger_metric,
+    trigger_condition,
+    trigger_value,
+    action_device_id,
+    action_type,
+    action_params,
+    is_enabled
+)
+SELECT
+    'soil_moisture',
+    'lt',
+    30,
+    d.id,
+    'on',
+    '{}',
+    1
+FROM device d
+WHERE d.device_type = 'pump'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM automation_rule a
+      WHERE a.trigger_metric = 'soil_moisture'
+        AND a.trigger_condition = 'lt'
+        AND a.trigger_value = 30
+        AND a.action_type = 'on'
+  );
+
+INSERT INTO automation_rule (
+    trigger_metric,
+    trigger_condition,
+    trigger_value,
+    action_device_id,
+    action_type,
+    action_params,
+    is_enabled
+)
+SELECT
+    'soil_moisture',
+    'gt',
+    70,
+    d.id,
+    'off',
+    '{}',
+    1
+FROM device d
+WHERE d.device_type = 'pump'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM automation_rule a
+      WHERE a.trigger_metric = 'soil_moisture'
+        AND a.trigger_condition = 'gt'
+        AND a.trigger_value = 70
+        AND a.action_type = 'off'
+  );
+
+INSERT INTO automation_rule (
+    trigger_metric,
+    trigger_condition,
+    trigger_value,
+    action_device_id,
+    action_type,
+    action_params,
+    is_enabled
+)
+SELECT
+    'light_intensity',
+    'lt',
+    5000,
+    d.id,
+    'on',
+    '{"brightness": 80}',
+    1
+FROM device d
+WHERE d.device_type = 'led'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM automation_rule a
+      WHERE a.trigger_metric = 'light_intensity'
+        AND a.trigger_condition = 'lt'
+        AND a.trigger_value = 5000
+        AND a.action_type = 'on'
+  );
+
+INSERT INTO automation_rule (
+    trigger_metric,
+    trigger_condition,
+    trigger_value,
+    action_device_id,
+    action_type,
+    action_params,
+    is_enabled
+)
+SELECT
+    'co2_level',
+    'gt',
+    1000,
+    d.id,
+    'on',
+    '{"speed": 100}',
+    1
+FROM device d
+WHERE d.device_type = 'fan'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM automation_rule a
+      WHERE a.trigger_metric = 'co2_level'
+        AND a.trigger_condition = 'gt'
+        AND a.trigger_value = 1000
+        AND a.action_type = 'on'
+  );
+
+INSERT INTO automation_rule (
+    trigger_metric,
+    trigger_condition,
+    trigger_value,
+    action_device_id,
+    action_type,
+    action_params,
+    is_enabled
+)
+SELECT
+    'co2_level',
+    'lt',
+    600,
+    d.id,
+    'off',
+    '{}',
+    1
+FROM device d
+WHERE d.device_type = 'fan'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM automation_rule a
+      WHERE a.trigger_metric = 'co2_level'
+        AND a.trigger_condition = 'lt'
+        AND a.trigger_value = 600
+        AND a.action_type = 'off'
+  );
+
+INSERT INTO zone (zone_name, zone_type, description)
+SELECT 'Greenhouse A', 'greenhouse', 'Main greenhouse area'
+WHERE NOT EXISTS (SELECT 1 FROM zone WHERE zone_name = 'Greenhouse A');
+INSERT INTO zone (zone_name, zone_type, description)
+SELECT 'Field Test Area', 'field', 'Outdoor test planting area'
+WHERE NOT EXISTS (SELECT 1 FROM zone WHERE zone_name = 'Field Test Area');

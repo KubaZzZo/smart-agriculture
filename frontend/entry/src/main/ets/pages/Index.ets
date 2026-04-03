@@ -1,5 +1,4 @@
-// 智慧农业控制系统 - 主页面（底部TabBar）
-import { AppColors } from '../common/Constants';
+﻿import { AppColors } from '../common/Constants';
 import { DashboardView } from '../views/DashboardView';
 import { MonitorView } from '../views/MonitorView';
 import { DeviceView } from '../views/DeviceView';
@@ -12,57 +11,57 @@ struct Index {
   @State currentIndex: number = 0;
 
   @Builder
-  tabBarItem(title: string, icon: Resource, index: number) {
+  tabBarItem(title: string, icon: Resource, index: number): void {
     Column() {
       SymbolGlyph(icon)
         .fontSize(24)
-        .fontColor([this.currentIndex === index ? AppColors.PRIMARY : AppColors.TEXT_SECONDARY])
+        .fontColor([this.currentIndex === index ? AppColors.PRIMARY : AppColors.TEXT_SECONDARY]);
       Text(title)
         .fontSize(11)
         .fontColor(this.currentIndex === index ? AppColors.PRIMARY : AppColors.TEXT_SECONDARY)
-        .margin({ top: 2 })
+        .margin({ top: 2 });
     }
     .width('100%')
     .height('100%')
     .justifyContent(FlexAlign.Center)
-    .alignItems(HorizontalAlign.Center)
+    .alignItems(HorizontalAlign.Center);
   }
 
-  build() {
+  build(): void {
     Tabs({ barPosition: BarPosition.End, index: this.currentIndex }) {
       TabContent() {
-        DashboardView()
+        DashboardView();
       }
-      .tabBar(this.tabBarItem('首页', $r('sys.symbol.house'), 0))
+      .tabBar(this.tabBarItem('首页', $r('sys.symbol.house'), 0));
 
       TabContent() {
-        MonitorView()
+        MonitorView();
       }
-      .tabBar(this.tabBarItem('监测', $r('sys.symbol.eye'), 1))
+      .tabBar(this.tabBarItem('监控', $r('sys.symbol.eye'), 1));
 
       TabContent() {
-        DeviceView()
+        DeviceView();
       }
-      .tabBar(this.tabBarItem('设备', $r('sys.symbol.gearshape'), 2))
+      .tabBar(this.tabBarItem('设备', $r('sys.symbol.gearshape'), 2));
 
       TabContent() {
-        AlertView()
+        AlertView();
       }
-      .tabBar(this.tabBarItem('预警', $r('sys.symbol.bell'), 3))
+      .tabBar(this.tabBarItem('告警', $r('sys.symbol.bell'), 3));
 
       TabContent() {
-        ProfileView()
+        ProfileView();
       }
-      .tabBar(this.tabBarItem('我的', $r('sys.symbol.person'), 4))
+      .tabBar(this.tabBarItem('我的', $r('sys.symbol.person'), 4));
     }
     .scrollable(false)
     .barHeight(56)
     .barMode(BarMode.Fixed)
-    .onChange((index: number) => {
+    .onChange((index: number): void => {
       this.currentIndex = index;
     })
     .width('100%')
     .height('100%')
-    .backgroundColor(AppColors.BG)
+    .backgroundColor(AppColors.BG);
   }
 }

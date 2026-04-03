@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>闂傚倸鍊搁崐鎼佸磹妞嬪海鐭嗗〒姘ｅ亾妤犵偞鐗犻、鏇㈡晝閳ь剛绮婚悩缁樼厵闁绘鐗婄欢鑼棯閹勫仴闁哄本娲熷畷鐓庘攽閹邦厜锕傛⒑濞茶骞楁い銊ワ躬閻涱噣寮介‖銉ラ叄椤㈡鍩€椤掍椒绻嗛柤娴嬫櫇绾惧ジ鏌嶈閸撶喎鐣峰鈧崺锟犲礃椤忓棙顫屾繝鐢靛Х閺佹悂宕戦悙鍝勭？闁惧浚鍋嗛々鏌ユ煕閹炬鎳愰敍婵囩箾鏉堝墽绉い鏇熺墪閳绘挸顫滈埀顒勫蓟濞戙垺鍋愮€规洖娲ら埅鐟邦渻閵堝棙绌跨紓宥勭窔閵嗕線寮撮姀鈩冩珕闂佽姤锚椤︻喚绱旈弴銏♀拻濞达絿顭堥ˉ蹇涙煕鐎ｎ亝鍣介柟骞垮灲瀹曠喖顢涘В浣冲洦鐓ラ柡鍐ㄥ€瑰▍鏇犵磼閳锯偓閸嬫捇姊绘笟鈧褏鎹㈤幒鎾村弿闁绘垼妫勯崹鍌氣攽閻樺磭顣查柣鎾存礋閺岀喖寮堕崹顔藉€庣紓浣靛姀閸嬫劗妲?/title>
+  <style>
+    :root {
+      --bg-1: #071019;
+      --bg-2: #0c1d30;
+      --bg-3: #112d48;
+      --panel: rgba(8, 22, 36, 0.82);
+      --line: rgba(89, 220, 255, 0.35);
+      --line-strong: rgba(89, 220, 255, 0.78);
+      --text: #d6f2ff;
+      --sub: #85b7cb;
+      --ok: #42f8b8;
+      --warn: #ffbe44;
+      --danger: #ff6a7d;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(1100px 450px at 100% -20%, rgba(79, 125, 255, 0.24), transparent 55%),
+        radial-gradient(820px 420px at -10% -20%, rgba(89, 220, 255, 0.18), transparent 55%),
+        linear-gradient(145deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(140, 220, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(140, 220, 255, 0.06) 1px, transparent 1px);
+      background-size: 30px 30px;
+      mask-image: radial-gradient(circle at 50% 30%, black 40%, transparent 90%);
+    }
+
+    .screen {
+      width: min(1520px, 95vw);
+      margin: 14px auto 24px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 12px;
+    }
+
+    .screen.full-mode {
+      width: min(1840px, 97vw);
+      margin-top: 8px;
+      gap: 10px;
+    }
+
+    .header {
+      grid-column: span 12;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(120deg, rgba(11, 29, 48, 0.92), rgba(6, 18, 32, 0.9));
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      box-shadow: 0 0 24px rgba(89, 220, 255, 0.22);
+    }
+
+    .title { margin: 0; font-size: 22px; letter-spacing: 1px; }
+    .meta { display: flex; gap: 12px; flex-wrap: wrap; color: var(--sub); font-size: 12px; }
+    .meta b { color: var(--text); }
+
+    .toolbar { display: inline-flex; gap: 8px; }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 12px;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(3px);
+      transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      top: -40px;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      pointer-events: none;
+      background: radial-gradient(circle, rgba(89, 220, 255, 0.2), transparent 72%);
+    }
+
+    .panel.spotlight {
+      border-color: var(--line-strong);
+      transform: translateY(-2px);
+      box-shadow: 0 0 0 1px rgba(89, 220, 255, 0.3), 0 0 26px rgba(89, 220, 255, 0.24);
+    }
+
+    .panel h3 {
+      margin: 0 0 9px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: #bdeaff;
+    }
+
+    .kpi-grid {
+      grid-column: span 12;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .kpi { min-height: 112px; display: grid; align-content: space-between; }
+    .kpi .label { color: var(--sub); font-size: 12px; }
+    .kpi .value { font-size: 30px; font-weight: 700; line-height: 1; }
+    .kpi .desc { color: var(--sub); font-size: 12px; }
+
+    .main-left { grid-column: span 7; min-height: 315px; }
+    .main-right { grid-column: span 5; min-height: 315px; }
+
+    .legend { display: flex; gap: 10px; color: var(--sub); font-size: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+    .legend i { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
+
+    .chart-wrap {
+      height: 252px;
+      border: 1px solid rgba(128, 181, 202, 0.28);
+      border-radius: 10px;
+      padding: 6px;
+      background: rgba(4, 12, 22, 0.55);
+    }
+
+    #trendChart { width: 100%; height: 100%; display: block; }
+
+    .list { display: grid; gap: 8px; max-height: 260px; overflow: auto; }
+    .item {
+      border: 1px solid rgba(89, 220, 255, 0.2);
+      border-radius: 10px;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.16);
+    }
+    .item-top { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+    .item-sub { margin-top: 4px; color: var(--sub); font-size: 12px; }
+
+    .status-grid, .insight-grid, .ctrl {
+      grid-column: span 12;
+      display: grid;
+      gap: 12px;
+    }
+
+    .status-grid { grid-template-columns: 1.2fr 1fr 1fr; }
+    .insight-grid { grid-template-columns: 1.2fr 1fr 1fr; }
+    .ctrl { grid-template-columns: 2.4fr 1fr 1fr; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 7px 6px; border-bottom: 1px solid rgba(128, 181, 202, 0.2); text-align: left; }
+    th { color: #9fd9ef; }
+
+    .status-pill {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid;
+    }
+    .online { color: var(--ok); border-color: rgba(66, 248, 184, 0.5); }
+    .offline { color: var(--danger); border-color: rgba(255, 106, 125, 0.5); }
+
+    .risk-strip {
+      display: grid;
+      grid-template-columns: repeat(24, minmax(8px, 1fr));
+      gap: 5px;
+      margin-top: 8px;
+    }
+    .risk-cell {
+      height: 44px;
+      border-radius: 8px;
+      border: 1px solid rgba(128, 181, 202, 0.25);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      font-size: 10px;
+      padding-bottom: 4px;
+      background: rgba(0, 0, 0, 0.16);
+    }
+    .risk-low { background: linear-gradient(180deg, rgba(66, 248, 184, 0.28), rgba(66, 248, 184, 0.1)); }
+    .risk-mid { background: linear-gradient(180deg, rgba(255, 190, 68, 0.34), rgba(255, 190, 68, 0.12)); }
+    .risk-high { background: linear-gradient(180deg, rgba(255, 106, 125, 0.34), rgba(255, 106, 125, 0.12)); }
+
+    .heat-list, .health-rank { display: grid; gap: 8px; }
+    .heat-row {
+      display: grid;
+      grid-template-columns: 84px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+    }
+    .heat-bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(128, 181, 202, 0.2);
+      border: 1px solid rgba(128, 181, 202, 0.26);
+      overflow: hidden;
+    }
+    .heat-fill { height: 100%; border-radius: 999px; }
+
+    .health-item {
+      border: 1px solid rgba(89, 220, 255, 0.2);
+      border-radius: 10px;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.16);
+      display: grid;
+      gap: 6px;
+    }
+    .health-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; }
+
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    input, button {
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: rgba(3, 11, 20, 0.8);
+      color: var(--text);
+      padding: 9px 10px;
+      font-size: 13px;
+    }
+    input { min-width: 180px; }
+    button {
+      min-width: 98px;
+      cursor: pointer;
+      background: linear-gradient(120deg, rgba(89, 220, 255, 0.34), rgba(79, 125, 255, 0.3));
+      transition: transform .14s ease, filter .14s ease;
+    }
+    button:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+    .hint { color: var(--sub); font-size: 12px; margin-top: 7px; }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .danger { color: var(--danger); }
+
+    @media (max-width: 1220px) {
+      .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+      .main-left, .main-right { grid-column: span 12; }
+      .status-grid, .insight-grid, .ctrl { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .title { font-size: 18px; }
+      .kpi .value { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="screen">
+    <section class="header">
+      <h1 class="title">SMART AGRI 闂?闂傚倸鍊搁崐宄懊归崶顒夋晪鐟滃酣銆冮妷褏鐭欓柛鏌倐鍋撻崸妤佲拺妞ゆ巻鍋撶紒澶婎嚟婢规洘绻濆顓犲幗闂佸綊鍋婇崜姘跺煝閺囩喓绠鹃柟鐐墯閻撳ジ鏌＄仦鍓р槈闁伙絾绻堥崺鈧い鎺戝绾剧粯绻涢幋娆忕仼闁告垹濮撮妴鎺戭潩閿濆懍澹曢梻浣告惈閻寰婇崐鐔轰簷闂備線鈧偛鑻晶鎾煙椤斻劌娲ら獮銏＄箾閸℃ê鐏╅柣鎺楃畺濮婃椽骞愭惔銏紩闂佺顑嗛幐濠氬Φ閸曨垼鏁囬柣鎰綑娴犳挳鎮楃憴鍕闁靛牏顭堥悾鐑藉础閻愬秵妫冮崺鈧い鎺戝濮规煡鏌ｉ弬鎸庢喐缂?/h1>
+      <div class="meta">
+        <span>闂傚倸鍊搁崐鎼佸磹妞嬪海鐭嗗〒姘ｅ亾妤犵偛顦甸弫宥夊礋椤掍焦顔囬梻浣芥硶閸犳挻鎱ㄧ€靛摜纾奸柍鍝勬噺閳锋垶銇勯幒鍡椾壕缂備礁顦伴幐鎶藉箯閹达附鍋勯悘蹇庣劍閺傗偓闂備胶绮敋鐎殿喖鐖奸獮鏍箛椤旂懓浜鹃柣鐔哄閸熺偟绱掔拠鑼ⅵ鐎殿喖顭峰鎾偄閾忓湱妲囬梻濠庡亜濞诧妇绮欓幒妤婃晛鐎广儱顦伴埛?<b id="refreshTick">5s</b></span>
+        <span>闂傚倸鍊搁崐鎼佸磹妞嬪海鐭嗗〒姘ｅ亾妤犵偞鐗犻、鏇㈡晝閳ь剟鎮块濮愪簻闁规澘鐖煎顕€鏌涚€ｎ亶妯€闁哄矉缍侀獮姗€宕樺顔兼暔?<b id="nowTime">--:--:--</b></span>
+        <span>闂傚倸鍊搁崐椋庣矆娓氣偓楠炴牠顢曚綅閸ヮ剦鏁冮柨鏇楀亾闁汇倗鍋撶换婵嬫濞戝崬鍓扮紒鐐劤椤兘寮婚敐澶婄疀妞ゆ帒鍊风划鐢告⒑?<b id="connState" class="warn">缂傚倸鍊搁崐鎼佸磹閹间礁纾归柣鎴ｅГ閸婂潡鏌ㄩ弬鍨挃闁活厽鐟╅弻鐔封枎闄囬褍煤椤擃潿鈧礁鈽夊鍡欏弳闂佸憡娲熷褎绂?/b></span>
+        <span>WS <b id="wsState" class="warn">缂傚倸鍊搁崐鎼佸磹閹间礁纾归柣鎴ｅГ閸婂潡鏌ㄩ弬鍨挃闁活厽鐟╅弻鐔封枎闄囬褍煤椤擃潿鈧礁鈽夊鍡欏弳闂佸憡娲熷褎绂?/b></span>
+        <span class="toolbar">
+          <button id="fullscreenBtn">闂傚倸鍊搁崐鎼佸磹閻戣姤鍤勯柛顐ｆ磵閳ь剨绠撳畷濂稿閳ュ啿绨ラ梻浣稿閸嬩線宕曟潏鈺冪焼濠㈣泛澶囬崑鎾诲礂婢跺﹣澹曢梻浣告啞濞诧箓宕滃▎鎾崇?/button>
+          <button id="rotateBtn">闂傚倸鍊搁崐椋庣矆娓氣偓楠炴牠顢曚綅閸ヮ剚鐒肩€广儱鎳愰敍鐔兼⒑閸︻厼顣兼繝銏☆焽缁絽螖娴ｉ绠氶梺闈涚墕閹冲繘宕抽崷顓犵＜? 闂傚倸鍊峰ù鍥敋瑜忛埀顒佺▓閺呯娀銆佸▎鎾冲唨妞ゆ挾鍋熼悰銉╂⒑閸︻厼鍔嬫い銊ユ噽婢?/button>
+        </span>
+      </div>
+    </section>
+
+    <section class="kpi-grid">
+      <article class="panel kpi"><div class="label">婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柟闂寸绾惧鏌ｉ幇顒佹儓缂佺姳鍗抽弻鐔虹磼閵忕姵鐏堥梺姹囧€楅崑鎾舵崲濞戙垹绠ｉ柣鎰皺閸斾即姊?/div><div class="value" id="kpiTemp">--</div><div class="desc" id="kpiTempDesc">闂?/div></article>
+      <article class="panel kpi"><div class="label">婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繑銇勯幘鍗炵仼缁炬儳顭烽弻鐔煎礈瑜忕敮娑㈡煟閹惧瓨绀冮柕鍥у椤㈡﹢鎮㈡搴濇樊闂備礁鎼鍡欑矙閹烘桅?/div><div class="value" id="kpiHum">--</div><div class="desc" id="kpiHumDesc">%</div></article>
+      <article class="panel kpi"><div class="label">闂傚倸鍊搁崐鎼佸磹妞嬪孩顐芥慨姗嗗墻閻掔晫绱撴担濮戣偐鎹㈤崱娑欑厱闁靛鍠栨晶顔剧磼閹邦収娈滄鐐寸墪鑿愭い鎺嗗亾濠碘€茬矙閺岋繝宕ㄩ钘夆偓鎰版煛鐏炵偓绀冪€垫澘瀚板畷鐓庘攽閸℃ぅ銉╂⒒娴ｇ鎮戞繝銏∶…鍥晸閻樿尪鎽曞┑鐐村灍閹冲洭鍩€椤掑﹦鐣垫鐐差儏閳规垿宕堕埡鈧柇顖氣攽?/div><div class="value" id="kpiSoil">--</div><div class="desc" id="kpiSoilDesc">%</div></article>
+      <article class="panel kpi"><div class="label">闂傚倸鍊搁崐鎼佸磹妞嬪海鐭嗗〒姘ｅ亾妤犵偛顦甸弫宥夊礋椤撶姷鍘梻浣侯攰閹活亪姊介崟顖氱柧婵犻潧顑嗛悡蹇撯攽閻愰潧浜炬繛鍛崌閺屸剝鎷呴崨濠庢＆闂佸搫鐭夌紞浣割嚕椤曗偓瀹曟帒顫濋璺ㄥ笡闂備浇顕х€涒晠鎳濇ィ鍏洦瀵奸弶鎳筹箓鏌涢弴銊ユ灓闁汇倐鍋撻梻浣筋潐閸庢娊顢氶銏犖ч柍鍝勬噺閳?/div><div class="value" id="kpiAlert">--</div><div class="desc" id="kpiAlertDesc">闂?/div></article>
+      <article class="panel kpi"><div class="label">濠电姷鏁告慨鐑藉极閹间礁纾绘繛鎴欏焺閺佸銇勯幘璺烘瀾闁告瑥绻橀弻鐔虹磼閵忕姵鐏嶉梺鍝勬噺缁诲牓寮婚弴鐔风窞闁割偅绻傛竟鏂库攽閻愭潙鐏熼柛銊ョ秺閹€斥槈閵忥紕鍘卞┑鐐村灥瀹曨剟寮稿☉妯忓綊鎮╅搹顐犱虎濠殿喖锕ュ钘壩涢崘銊㈡閺夊牃鏅涜ぐ瀣⒒閸屾艾鈧摜鈧凹鍓涢埀顒佸嚬閸ｏ綁宕洪埀?/div><div class="value" id="kpiWater">--</div><div class="desc" id="kpiWaterDesc">L</div></article>
+    </section>
+
+    <section class="panel main-left" id="trendPanel">
+      <h3>闂傚倸鍊搁崐鎼佸磹閻戣姤鍤勯柛鎾茬閸ㄦ繃銇勯弽銊х煀闁搞劍绻堥弻锝呂熷▎鎯ф闂佹悶鍔岄崐鎼佹箒闂佺绻楅崑鎰板汲濮椻偓閺屽秷顧侀柛鎾寸懇瀹曟劙骞愭惔婵堢畾濠殿喗绻傞惌鍫澪ｆ總鍛娾拺閻犲洠鈧磭浠滈梺绋挎捣閺佸鐛崘銊庢棃宕ㄩ鑺ョ彸闂佸湱鍘ч悺銊ф崲閸曨垱鍎庨幖娣妽閳?(闂傚倸鍊搁崐鎼佸磹妞嬪海鐭嗗〒姘ｅ亾妤犵偞鐗犻、鏇㈡晜閽樺缃曢梻浣告啞閸旓箓宕伴弽顐㈩棜濠电姵纰嶉悡娆撴煙鐟欏嫬濮﹂柛銈嗙懅缁?4闂?</h3>
+      <div class="legend">
+        <span><i style="background:#59dcff"></i> 婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柟闂寸绾惧鏌ｉ幇顒佹儓缂佺姳鍗抽弻鐔虹磼閵忕姵鐏堥梺姹囧€楅崑鎾舵崲濞戙垹绠ｉ柣鎰皺閸斾即姊?/span>
+        <span><i style="background:#42f8b8"></i> 婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繑銇勯幘鍗炵仼缁炬儳顭烽弻鐔煎礈瑜忕敮娑㈡煟閹惧瓨绀冮柕鍥у椤㈡﹢鎮㈡搴濇樊闂備礁鎼鍡欑矙閹烘桅?/span>
+        <span><i style="background:#ffbe44"></i> 闂傚倸鍊搁崐鎼佸磹妞嬪孩顐芥慨姗嗗墻閻掔晫绱撴担濮戣偐鎹㈤崱娑欑厱闁靛鍠栨晶顔剧磼閹邦収娈滄鐐寸墪鑿愭い鎺嗗亾濠碘€茬矙閺岋繝宕ㄩ钘夆偓鎰版煛鐏炵偓绀冪€垫澘瀚板畷鐓庘攽閸℃ぅ銉╂⒒娴ｇ鎮戞繝銏∶…鍥晸閻樿尪鎽曞┑鐐村灍閹冲洭鍩€椤掑﹦鐣垫鐐差儏閳规垿宕堕埡鈧柇顖氣攽?/span>
+      </div>
+      <div class="chart-wrap"><svg id="trendChart" viewBox="0 0 900 260" preserveAspectRatio="none"></svg></div>
+      <div class="hint">闂傚倸鍊搁崐鎼佸磹瀹勬噴褰掑炊瑜滃ù鏍煏婵炵偓娅嗛柛銈呭閺屻倗绮欑捄銊ょ驳濠电偛鎳愭慨鍨┍婵犲洤围闁稿本鐭竟鏇㈡⒒娴ｉ涓茬紒韫矙閹ê顫濇潏鈺冪暥闂佺粯姊婚崢褔鎮為崹顐犱簻闁瑰搫妫楁禍鎯ь渻閵堝棙绌跨紓宥勭閻ｉ攱绺界粙鍨祮闂佺粯鍔曠粔鏌ュ礉閹达箑钃熼柕濞炬櫅濡﹢鏌涢…鎴濇灀闁圭鍟村? /api/sensor/history?page_size=24 + WebSocket 濠电姷鏁告慨鐑藉极閸涘﹥鍙忔い鎾卞灩缁狀垶鏌涢幇闈涙灈鐎瑰憡绻冮妵鍕箻鐎靛摜鐣哄銈庡亝濞茬喎顫?/div>
+    </section>
+
+    <section class="panel main-right" id="alertPanel">
+      <h3>闂傚倸鍊搁崐宄懊归崶顒夋晪鐟滃酣銆冮妷褏鐭欓柛鏌倐鍋撻崸妤佲拺妞ゆ巻鍋撶紒澶婎嚟婢规洘绻濆顓犲幗闂佸綊鍋婇崜姘跺煝閺囩喓绠鹃柟鐐墯閻撳ジ鏌＄仦鍓р槈闁伙絾绻堥崺鈧い鎺戝绾剧粯绻涢幋鐑囦緵闁哥喎鎳忕换婵嬫濞戞瑯妫忛梺琛″亾濞寸姴顑嗛悡鐔镐繆椤栨碍鎯堢紒鐙欏啠鏀芥い鏍ㄥ搸閸嬨垽鏌＄仦鍓ф创鐎殿噮鍓熼獮鎰償閳╁啰鏆梻鍌欑閹碱偊鎯屾径灞惧床婵犻潧妫涢弳锔芥叏濡炶浜鹃梺杞扮閸熸挳宕洪埀顒併亜閹烘垵顏╃紒鈧径瀣弿婵☆垰銇橀崥顐ょ棯?/h3>
+      <div class="list" id="alertList"></div>
+    </section>
+
+    <section class="status-grid">
+      <article class="panel" id="devicePanel">
+        <h3>闂傚倸鍊搁崐宄懊归崶褏鏆﹂柛顭戝亝閸欏繘鏌熼幆鏉啃撻柛濠傛健閺屻劑寮撮悙娴嬪亾閸濄儱顥氶柛褎顨嗛悡娆撴偣閸濆嫭鎯堟い銉у仱閺屾盯濡烽鐓庘拻闂佽桨绀佸Λ婵嬪蓟濞戙垹鍗抽柕濞垮劚椤晜绻涚€涙鐭婄紓宥咃工椤繐煤椤忓懎浜楅柟鍏肩暘閸ㄦ椽宕伴幇顒夋富闁靛牆绻掔€佃偐绱掗鐣屾噧闁伙絿鍏橀獮瀣晝閳ь剛绮绘繝姘€垫繛鎴烆仾椤忓牜鏁侀柟鍓х帛閳锋垿鏌熼鍡楁噽椤斿﹪姊虹涵鍛彧闁归€涚窔婵＄敻骞囬鐘垫嚌闂侀€炲苯澧い?/h3>
+        <table>
+          <thead><tr><th>闂傚倸鍊搁崐宄懊归崶褏鏆﹂柛顭戝亝閸欏繘鏌熼幆鏉啃撻柛濠傛健閺屻劑寮撮悙娴嬪亾閸濄儱顥氶柛褎顨嗛悡娆撴偣閸濆嫭鎯堟い?/th><th>缂傚倸鍊搁崐鎼佸磹閹间礁纾瑰瀣椤愪粙鏌ㄩ悢鍝勑㈢痪鎹愵嚙椤潡鎳滈棃娑樞曢梺杞扮椤戝洭骞夐幖浣哥睄闁割偅绻勯悾?/th><th>闂傚倸鍊搁崐鎼佸磹閻戣姤鍤勯柛鎾茬閸ㄦ繃銇勯弽顐汗闁逞屽墾缁犳挸鐣锋總绋课ㄩ柕澶涢檮琚ｉ梻鍌欑閹碱偆绮欐笟鈧畷銏＄附閸涘﹤鈧?/th><th>闂傚倸鍊搁崐鎼佸磹妞嬪海鐭嗗〒姘ｅ亾妤犵偛顦甸弫鎾绘偐閸愯弓鐢婚梻渚€娼чˇ顐﹀疾濞戞艾顥氶柛锔诲幗閸犳劙鏌ｅΔ鈧悧鍡欑箔閹烘挻鍙?/th></tr></thead>
+          <tbody id="deviceTable"></tbody>
+        </table>
+      </article>
+
+      <article class="panel" id="systemPanel">
+        <h3>缂傚倸鍊搁崐鎼佸磹閹间礁纾瑰瀣椤愪粙鏌ㄩ悢鍝勑㈤柛銊ュ€垮濠氬醇閻旀亽鈧帡鏌￠崱顓犵暤闁哄矉缍佹慨鈧柕鍫濇闁款參姊洪幖鐐插缂佽鐗撳璇测槈濡攱鏂€闂佺硶鍓濋〃蹇斿鐏炶В鏀介柣鎰仯閳ь剙顑囬幑銏犫攽鐎ｎ亣鎽曞┑鐐村灦閻喖鈻介鍫熺厱闁圭偓顨呴幏瀣触鐎ｎ偆绡€?/h3>
+        <div class="list" id="systemList"></div>
+      </article>
+
+      <article class="panel" id="zonePanel">
+        <h3>闂傚倸鍊搁崐鎼佸磹妞嬪海鐭嗗〒姘ｅ亾妤犵偛顦甸弫宥夊礋椤掍焦顔囬梻浣告贡閸庛倝宕甸敃鈧埥澶娢熷鍕棃鐎规洘顭堥ˇ鎾煕閹惧崬濡兼い顏勫暣婵″爼宕卞▎蹇ｆ椒闂備礁鎲￠崹褰掑箠閹剧儵鈧箓宕堕浣规闂佺粯锚绾绢參宕㈤柆宥嗙厽闊洦娲栨禒婊冾熆瑜忛弲顐ゅ垝婵犳艾唯闁挎柨澧介?/h3>
+        <div class="list" id="zoneList"></div>
+      </article>
+    </section>
+
+    <section class="insight-grid">
+      <article class="panel" id="weatherRiskPanel">
+        <h3>24H Weather Risk Strip</h3>
+        <div class="hint" id="weatherRiskText">Waiting weather forecast...</div>
+        <div class="risk-strip" id="weatherRiskStrip"></div>
+      </article>
+
+      <article class="panel" id="zoneHeatPanel">
+        <h3>Zone Heatmap</h3>
+        <div class="hint">Score by online ratio and active actuator load</div>
+        <div class="heat-list" id="zoneHeatList"></div>
+      </article>
+
+      <article class="panel" id="deviceHealthPanel">
+        <h3>Device Health Rank</h3>
+        <div class="hint">Top risky devices from /api/device/health</div>
+        <div class="health-rank" id="deviceHealthRank"></div>
+      </article>
+    </section>
+
+    <section class="ctrl">
+      <article class="panel">
+        <h3>闂傚倸鍊搁崐椋庣矆娓氣偓楠炴牠顢曚綅閸ヮ剦鏁冮柨鏇楀亾闁汇倗鍋撶换婵嬫濞戝崬鍓扮紒鐐劤椤兘寮婚敐澶婄疀妞ゆ帒鍊风划鐢告⒑閸濆嫭顥炵紒顔芥崌楠炲啫螖閸涱噮妫冨┑鐐村灦閻熴儵寮抽崼鐔虹瘈婵炲牆鐏濋悘鐘绘煏閸喐鍊愮€殿喛顕ч埥澶愬閻樻鍟嬫繝寰锋澘鈧劙宕戦幘缁樼厵闁告劘灏欑粻濠氭煙?/h3>
+        <div class="row">
+          <input id="baseUrl" value="http://127.0.0.1:8000" placeholder="API Base URL" />
+          <input id="tokenInput" placeholder="Bearer Token闂傚倸鍊搁崐鎼佸磹閻戣姤鍊块柨鏃堟暜閸嬫挾绮☉妯诲櫧闁活厽鐟╅弻鐔告綇妤ｅ啯顎嶉梺绋款儏椤戝寮诲☉銏犵労闁告劑鍔嶉幆娑欑箾鐎涙鐭婄紓宥咃躬瀵鏁嶉崟顏呭媰闁荤姴娲﹁ぐ鍐╂叏閺囥垺鈷戠紒瀣儥閸庡矂鏌￠崨顔剧煂闁瑰箍鍨归埥澶愬閻樿尪鈧灝鈹戦埥鍡楃仴婵炲拑绲剧粋宥夊醇閺囩啿鎷洪柡澶屽仦婢瑰棝藝閿曞倹鍊垫慨姗嗗亜瀹撳棛鈧鍠涢褔鍩ユ径濠庢建闁糕剝锚閸忓﹥淇婇悙顏勨偓鏍暜婵犲洦鍊块柨鏇楀亾闁伙絿鍏樺畷妯好圭€ｎ偅鏉搁梻浣虹帛閸旀洖顕ｉ崼鏇為棷闁绘垼濮ら悡鏇㈠箹濞ｎ剙鐏悘蹇ョ畱閳规垿鏁嶉崟顒佹瘓濡ょ姷鍋涘ú顓烆嚕閸洖鍨傛い鏃囧亹閵堫喖鈹戦敍鍕杭闁稿﹥娲滈幑銏ゅ箛椤戔晜绋戦埥澶愬煑? />
+          <button id="saveTokenBtn">濠电姷鏁告慨鐑藉极閹间礁纾块柟瀵稿Т缁躲倝鏌﹀Ο渚＆婵炲樊浜濋弲婊堟煟閹伴潧澧幖鏉戯躬濮婅櫣绮欑捄銊т紘闂佺顑囬崑銈呯暦閹达箑围濠㈣泛顑囬崢鎾绘⒑缂佹ê鐏﹂惇澶岀磼椤旂虎娼檈n</button>
+          <button id="refreshBtn">缂傚倸鍊搁崐鎼佸磹閹间礁纾归柣鎴ｅГ閸婂潡鏌ㄩ弴鐐测偓鎼佹嫅閻斿吋鐓忓┑鐐靛亾濞呮捇鏌℃担绋款伃闁哄本绋戦埥澶愬础閻愯尙顔掗梻浣告惈濡酣宕愬┑瀣摕婵炴垯鍨归悞娲煕閹板吀绨存俊鎻掔墢缁辨挻鎷呴幓鎺嶅闂備胶纭堕崜婵堢矙閹烘鐓曢柟杈鹃檮閻撴洘銇勯鐔风仴婵炲懏锕㈤弻娑欐償閵忕姴顫掗梺鍝勭焿缂嶄線鐛鈧、娑橆潩椤愩埄妫?/button>
+        </div>
+        <div class="hint">Token 濠电姷鏁告慨鐑藉极閹间礁纾绘繛鎴欏焺閺佸銇勯幘璺烘瀾闁告瑥绻橀弻鐔虹磼閵忕姵鐏堢紓浣哄Х婵兘鍩€椤掆偓缁犲秹宕曢崡鐏绘椽鏁冮埀顒勬偩閻戣棄鐭楀璺侯儏瀵灝鈹戦埥鍡楃仴妞ゆ泦鍥モ偓鍌炲箮閼恒儳鍘遍柣搴秵閸嬪懐浜搁銏＄厓闁芥ê顦藉Σ鎼佹煃鐠囪尙效妞ゃ垺顭堥ˇ杈╃磼閵娿儺鐓奸柡灞诲姂瀵潙螣閾忛€涚礄婵＄偑鍊戦崹鍝勎涢崘銊ф殾婵犻潧顑嗛崑鈺冣偓鍏夊亾濠电姴鍟弳鐐电磽閸屾瑨鍏屽┑顔炬暩缁瑩骞嬮敂鑲╃◤濠电娀娼ч鍛矆閸岀偞鐓犳繛鏉戭儐濞呭洭妫勭€ｎ喗鈷掗柛灞捐壘閳ь剟顥撳▎銏狀潩椤掑鍔烽梺鐓庮潟閸婃洜娆㈤妶鍛斀闁绘ê鐤囨竟妯肩磼閳ь剚寰勭仦绋夸壕妤犵偛鐏濋崝姘舵煙闁垮鐏撮柟铏崌瀹曞綊顢欏顒傜Ш鐎规洘顨婂畷妤呮嚃閳哄啠鏋忛梻鍌欑濠€閬嶅箠閹剧粯鍋夊┑鍌滎焾閽冪喖鏌曢崼婵愭Ц缂佲偓閸儲鐓欑紓浣姑粭鎺擃殽閻愬樊鍎旀慨濠呮缁瑥鈻庨幆褍澹夐梻浣告贡閹虫挸煤閵堝鍋╅柣鎴ｆ缁犺櫕淇婇妶鍕槮闁逞屽墴閺€閬嶅Φ閸曨喚鐤€閹艰揪缍嗗Σ顔界箾鐎涙鐭嬮柛搴㈠▕閳ワ箓宕稿Δ浣告疂闂傚倸鐗婄粙鎴︼綖瀹ュ拋娓婚柕鍫濆暙閸旀岸鏌ｅΔ鈧敃顏呬繆閻㈢绀嬫い鏍电稻閺呮繂顪冮妶鍡楀闁搞劌婀辩划缁樼節濮橆厸鎷洪梺鐓庮潟閸婃洟寮搁幋鐘电＜閻犲洦褰冮埀顒佸娣囧﹪骞橀鑲╊唺闂佽鎯岄崢浠嬪磽闂堟侗娓婚柕鍫濇鐏忛潧鈹戦鎯у幋闁诡噣绠栧畷婊嗩槾缁?API key闂?/div>
+      </article>
+
+      <article class="panel">
+        <h3>闂傚倸鍊搁崐鎼佸磹閹间讲鈧箓顢楅崟顐わ紱闂佸憡娲﹂崐瀣亹閹烘垹锛滈梺缁樺姌鐏忔瑩鏁嶅☉銏♀拺闁告稑锕ｇ欢閬嶆煕濮椻偓缁犳牕顕ｉ幎钘壩у璺猴功椤旀劕鈹戦悜鍥╃У闁告挻鐟︽穱濠冪鐎ｎ偆鍘遍柟鑹版彧缁辨洟鎮為幖浣圭厵妞ゆ棁鍋愮粔铏光偓瑙勬礀閻栧ジ銆侀弮鍫濈妞ゆ挾鍣ラ崵鍕磽?/h3>
+        <div class="row">
+          <input id="username" placeholder="闂傚倸鍊搁崐鎼佸磹閻戣姤鍊块柨鏇楀亾妞ゎ亜鍟村畷褰掝敋閸涱垰濮洪梻浣侯潒閸曞灚鐣剁紓浣插亾濠㈣泛澶囬崑鎾荤嵁閸喖濮庡銈忓瘜閸ㄨ泛顕ｆ导鏉懳ㄩ柨鏂垮⒔椤旀洟姊洪悷鎵憼闁荤喆鍎甸幃姗€鍩￠崨顔间画? />
+          <input id="password" type="password" placeholder="闂傚倸鍊搁崐宄懊归崶顒夋晪鐟滄棃寮绘繝鍥ㄦ櫜闁告粈鑳堕崝鐑芥偡濠婂啰啸闁诲繐顑呴埞鎴︽倷閺夋垹浠ч梺鎼炲妽濡炶棄鐣? />
+          <button id="loginBtn">闂傚倸鍊搁崐鎼佸磹瀹勬噴褰掑炊椤掍礁鍓銈嗗姧缁犳垿鐛姀銈嗙厓閺夌偞澹嗛崝宥嗐亜閺傚灝顏紒?/button>
+        </div>
+      </article>
+
+      <article class="panel">
+        <h3>闂傚倸鍊搁崐鎼佸磹閻戣姤鍤勯柛鎾茬閸ㄦ繃銇勯弽顐汗闁逞屽墾缁犳挸鐣锋總绋课ㄩ柕澶涢檮琚ｉ梻鍌欑閹碱偆绮欐笟鈧畷銏＄附閸涘﹤鈧?/h3>
+        <div id="statusBox" class="hint">缂傚倸鍊搁崐鎼佸磹閹间礁纾归柣鎴ｅГ閸婂潡鏌ㄩ弬鍨挃闁活厽鐟╅弻鐔封枎闄囬褍煤椤擃潿鈧礁鈽夊鍡欏弳闂佸憡娲熷褎绂掑ú顏呪拻濞达綀娅ｇ敮娑欐叏婵犲偆鐓肩€规洏鍨奸ˇ瀵哥磼椤旇偐澧︾€规洖宕灒闁兼祴鏅濆Σ鍥⒒閸屾艾鈧悂鎮ф繝鍕煓闁圭儤顨嗛弲顒傗偓骞垮劚濡稓绮绘ィ鍐╃厱闊洦娲嶉幏鈩冪箾閸喓鐭掗柡?..</div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+  const state = {
+    token: localStorage.getItem('bigscreen_token') || '',
+    baseUrl: localStorage.getItem('bigscreen_base_url') || 'http://127.0.0.1:8000',
+    ws: null,
+    polling: null,
+    fullscreen: false,
+    rotateEnabled: true,
+    rotateTimer: null,
+    rotateIndex: 0,
+    focusPanels: ['trendPanel', 'alertPanel', 'devicePanel', 'systemPanel', 'zonePanel', 'weatherRiskPanel', 'zoneHeatPanel', 'deviceHealthPanel'],
+    series: { temperature: [], humidity: [], soil: [], labels: [] },
+  };
+
+  const el = (id) => document.getElementById(id);
+
+  function setStatus(text, type = 'ok') { el('statusBox').innerHTML = `<span class="${type}">${text}</span>`; }
+  function setConn(text, type) { el('connState').textContent = text; el('connState').className = type; }
+  function setWs(text, type) { el('wsState').textContent = text; el('wsState').className = type; }
+
+  function authHeaders(json = false) {
+    const h = {};
+    if (state.token) h['Authorization'] = `Bearer ${state.token}`;
+    if (json) h['Content-Type'] = 'application/json';
+    return h;
+  }
+
+  async function request(path, options = {}) {
+    const base = state.baseUrl.replace(/\/$/, '');
+    const res = await fetch(`${base}${path}`, {
+      ...options,
+      headers: { ...(options.headers || {}) },
+    });
+    const txt = await res.text();
+    let data = {};
+    try { data = txt ? JSON.parse(txt) : {}; } catch { data = { raw: txt }; }
+    if (!res.ok) {
+      const msg = data.detail || data.message || JSON.stringify(data);
+      throw new Error(`${res.status} ${msg}`);
+    }
+    return data;
+  }
+
+  function toPoints(arr, w = 860, h = 220, pad = 16) {
+    if (!arr.length) return '';
+    const min = Math.min(...arr);
+    const max = Math.max(...arr);
+    const span = max - min || 1;
+    return arr.map((v, i) => {
+      const x = pad + (i * (w - pad * 2)) / Math.max(1, arr.length - 1);
+      const y = h - pad - ((v - min) / span) * (h - pad * 2);
+      return `${x},${y}`;
+    }).join(' ');
+  }
+
+  function renderChart() {
+    const svg = el('trendChart');
+    const t = state.series.temperature;
+    const h = state.series.humidity;
+    const s = state.series.soil;
+    if (!t.length) {
+      svg.innerHTML = '<text x="20" y="36" fill="#80b5ca" font-size="14">No trend data</text>';
+      return;
+    }
+    const grid = [20, 60, 100, 140, 180, 220]
+      .map((y) => `<line x1="0" y1="${y}" x2="900" y2="${y}" stroke="rgba(128,181,202,.18)" />`).join('');
+    svg.innerHTML = `
+      <g>${grid}</g>
+      <polyline points="${toPoints(t)}" fill="none" stroke="#59dcff" stroke-width="3" stroke-linecap="round" />
+      <polyline points="${toPoints(h)}" fill="none" stroke="#42f8b8" stroke-width="3" stroke-linecap="round" />
+      <polyline points="${toPoints(s)}" fill="none" stroke="#ffbe44" stroke-width="3" stroke-linecap="round" />
+    `;
+  }
+
+  function appendRealtimePoint(data) {
+    if (!data) return;
+    const push = (arr, v) => { arr.push(Number(v || 0)); if (arr.length > 24) arr.shift(); };
+    push(state.series.temperature, data.temperature);
+    push(state.series.humidity, data.humidity);
+    push(state.series.soil, data.soil_moisture);
+    state.series.labels.push(String(data.created_at || '').slice(11, 16));
+    if (state.series.labels.length > 24) state.series.labels.shift();
+    renderChart();
+
+    el('kpiTemp').textContent = Number(data.temperature || 0).toFixed(1);
+    el('kpiHum').textContent = Number(data.humidity || 0).toFixed(1);
+    el('kpiSoil').textContent = Number(data.soil_moisture || 0).toFixed(1);
+  }
+
+  function renderSystem(data) {
+    const latest = data.latest_sensor || {};
+    const rows = [
+      ['Device Total', data.device_total],
+      ['Device Online', data.device_online],
+      ['Alerts Today', data.alert_today],
+      ['Realtime Temp', latest.temperature != null ? `${Number(latest.temperature).toFixed(1)}C` : '--'],
+      ['Realtime Humidity', latest.humidity != null ? `${Number(latest.humidity).toFixed(1)}%` : '--'],
+    ];
+    el('systemList').innerHTML = rows.map(([k, v]) => `<div class="item"><div class="item-top"><span>${k}</span><b>${v ?? '--'}</b></div></div>`).join('');
+  }
+
+  function renderDevices(list) {
+    const html = (list || []).slice(0, 14).map((d) => {
+      const online = Number(d.status) === 1;
+      const pill = `<span class="status-pill ${online ? 'online' : 'offline'}">${online ? 'ON' : 'OFF'}</span>`;
+      return `<tr><td>${d.device_name}</td><td>${d.device_type}</td><td>${pill}</td><td>${JSON.stringify(d.params || {}).slice(0, 32)}</td></tr>`;
+    }).join('');
+    el('deviceTable').innerHTML = html || '<tr><td colspan="4">No devices</td></tr>';
+  }
+
+  function renderZones(zones, devices) {
+    const allDevices = devices || [];
+    const onlineTotal = allDevices.filter((d) => Number(d.status) === 1).length;
+    el('zoneList').innerHTML = (zones || []).map((z) => `
+      <div class="item">
+        <div class="item-top">
+          <b>${z.zone_name}</b>
+          <span class="status-pill ${Number(z.is_active) === 1 ? 'online' : 'offline'}">${Number(z.is_active) === 1 ? 'active' : 'disabled'}</span>
+        </div>
+        <div class="item-sub">devices ${z.device_count} · online total ${onlineTotal}</div>
+      </div>
+    `).join('') || '<div class="hint">No zones</div>';
+  }
+
+  function renderAlerts(logs) {
+    const list = logs || [];
+    if (!list.length) {
+      el('alertList').innerHTML = '<div class="hint">No alerts</div>';
+      return;
+    }
+    el('alertList').innerHTML = list.slice(0, 12).map((a) => {
+      const t = String(a.created_at || '').replace('T', ' ').slice(0, 19);
+      const level = a.alert_type === 'high' ? 'danger' : 'warn';
+      return `<div class="item"><div class="item-top"><b>${a.metric_name}</b><span class="${level}">${a.alert_type}</span></div><div class="item-sub">value ${a.metric_value} · ${t}</div></div>`;
+    }).join('');
+    el('kpiAlert').textContent = String(list.filter((x) => Number(x.is_read) === 0).length);
+  }
+
+  function evaluateWeatherRisk(point) {
+    const t = Number(point.temperature || 0);
+    const h = Number(point.humidity || 0);
+    if (t >= 34 || t <= 6 || h >= 88 || h <= 25) return 'high';
+    if (t >= 30 || t <= 10 || h >= 80 || h <= 35) return 'mid';
+    return 'low';
+  }
+
+  function renderWeatherRisk(points, suggestions) {
+    const strip = el('weatherRiskStrip');
+    const text = el('weatherRiskText');
+    const list = (points || []).slice(0, 24);
+    if (!list.length) {
+      strip.innerHTML = '';
+      text.textContent = 'No forecast data';
+      return;
+    }
+
+    strip.innerHTML = list.map((p) => {
+      const level = evaluateWeatherRisk(p);
+      const hour = String(p.time || '').slice(11, 13) || '--';
+      const cls = level === 'high' ? 'risk-high' : (level === 'mid' ? 'risk-mid' : 'risk-low');
+      return `<div class="risk-cell ${cls}">${hour}</div>`;
+    }).join('');
+
+    const high = list.filter((p) => evaluateWeatherRisk(p) === 'high').length;
+    const mid = list.filter((p) => evaluateWeatherRisk(p) === 'mid').length;
+    text.textContent = `High ${high}h · Medium ${mid}h · ${(suggestions || [])[0] || 'No suggestion'}`;
+  }
+
+  async function refreshWeatherRisk() {
+    try {
+      const data = await request('/api/ai/weather-forecast?hours=24', { headers: authHeaders() });
+      renderWeatherRisk(data.points || [], data.suggestions || []);
+    } catch (err) {
+      el('weatherRiskText').textContent = `Weather risk unavailable: ${err.message}`;
+      el('weatherRiskStrip').innerHTML = '';
+    }
+  }
+
+  async function refreshZoneHeatmap(zones) {
+    const out = el('zoneHeatList');
+    const zoneList = zones || [];
+    if (!zoneList.length) {
+      out.innerHTML = '<div class="hint">No zones</div>';
+      return;
+    }
+
+    try {
+      const details = await Promise.all(zoneList.map(async (z) => {
+        const rows = await request(`/api/zone/${z.id}/devices`, { headers: authHeaders() });
+        const total = rows.length;
+        const online = rows.filter((d) => Number(d.status) === 1).length;
+        const actuatorOn = rows.filter((d) => Number(d.status) === 1 && ['pump', 'fan', 'valve', 'spray'].includes(String(d.device_type))).length;
+        const onlineRatio = total ? online / total : 0;
+        const loadRatio = total ? actuatorOn / total : 0;
+        const score = Math.max(0, Math.min(100, Math.round((1 - onlineRatio) * 70 + loadRatio * 30)));
+        return { name: z.zone_name, score, online, total, load: actuatorOn };
+      }));
+
+      const color = (score) => score >= 70 ? '#ff6a7d' : (score >= 40 ? '#ffbe44' : '#42f8b8');
+      out.innerHTML = details.sort((a, b) => b.score - a.score).map((x) => `
+        <div class="heat-row">
+          <span>${x.name}</span>
+          <div class="heat-bar"><div class="heat-fill" style="width:${x.score}%;background:${color(x.score)}"></div></div>
+          <span>${x.score}</span>
+        </div>
+        <div class="hint">online ${x.online}/${x.total} · active actuator ${x.load}</div>
+      `).join('');
+    } catch (err) {
+      out.innerHTML = `<div class="hint danger">Zone heatmap unavailable: ${err.message}</div>`;
+    }
+  }
+
+  async function refreshDeviceHealthRank() {
+    const out = el('deviceHealthRank');
+    try {
+      const rows = await request('/api/device/health', { headers: authHeaders() });
+      const sorted = (rows || []).slice().sort((a, b) => Number(a.health_score || 0) - Number(b.health_score || 0)).slice(0, 6);
+      if (!sorted.length) {
+        out.innerHTML = '<div class="hint">No health data</div>';
+        return;
+      }
+
+      const cls = (s) => s < 50 ? 'danger' : (s < 75 ? 'warn' : 'ok');
+      out.innerHTML = sorted.map((d) => `
+        <div class="health-item">
+          <div class="health-top"><b>${d.device_name}</b><span class="${cls(Number(d.health_score || 0))}">score ${d.health_score}</span></div>
+          <div class="item-sub">type ${d.device_type} · errors ${d.error_count} · offline ${d.offline_count}</div>
+        </div>
+      `).join('');
+    } catch (err) {
+      out.innerHTML = `<div class="hint danger">Device health unavailable: ${err.message}</div>`;
+    }
+  }
+
+  function setClock() { el('nowTime').textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false }); }
+
+  function clearSpotlight() {
+    state.focusPanels.forEach((id) => {
+      const panel = el(id);
+      if (panel) panel.classList.remove('spotlight');
+    });
+  }
+
+  function runSpotlight() {
+    if (!state.rotateEnabled) return;
+    clearSpotlight();
+    const id = state.focusPanels[state.rotateIndex % state.focusPanels.length];
+    const panel = el(id);
+    if (panel) panel.classList.add('spotlight');
+    state.rotateIndex += 1;
+  }
+
+  function startRotate() {
+    if (state.rotateTimer) clearInterval(state.rotateTimer);
+    runSpotlight();
+    state.rotateTimer = setInterval(runSpotlight, 3500);
+  }
+
+  function setRotate(enabled) {
+    state.rotateEnabled = enabled;
+    el('rotateBtn').textContent = `Rotate: ${enabled ? 'ON' : 'OFF'}`;
+    if (enabled) startRotate();
+    else {
+      if (state.rotateTimer) clearInterval(state.rotateTimer);
+      state.rotateTimer = null;
+      clearSpotlight();
+    }
+  }
+
+  async function toggleFullscreen() {
+    const root = document.documentElement;
+    if (!document.fullscreenElement) {
+      await root.requestFullscreen();
+      state.fullscreen = true;
+    } else {
+      await document.exitFullscreen();
+      state.fullscreen = false;
+    }
+    el('fullscreenBtn').textContent = state.fullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+    document.querySelector('.screen').classList.toggle('full-mode', state.fullscreen);
+  }
+
+  async function login() {
+    const username = el('username').value.trim();
+    const password = el('password').value;
+    if (!username || !password) {
+      setStatus('Please input username and password', 'warn');
+      return;
+    }
+
+    try {
+      const data = await request('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      state.token = data.access_token || '';
+      localStorage.setItem('bigscreen_token', state.token);
+      el('tokenInput').value = state.token;
+      setStatus(`Login success: ${data.username}`, 'ok');
+      await refreshAll();
+      connectWs();
+    } catch (err) {
+      setStatus(`Login failed: ${err.message}`, 'danger');
+    }
+  }
+
+  async function refreshTrend() {
+    const data = await request('/api/sensor/history?page=1&page_size=24', { headers: authHeaders() });
+    const items = (data.items || []).slice().reverse();
+    state.series.temperature = items.map((x) => Number(x.temperature || 0));
+    state.series.humidity = items.map((x) => Number(x.humidity || 0));
+    state.series.soil = items.map((x) => Number(x.soil_moisture || 0));
+    state.series.labels = items.map((x) => String(x.created_at || '').slice(11, 16));
+    renderChart();
+
+    if (items.length) {
+      const last = items[items.length - 1];
+      el('kpiTemp').textContent = Number(last.temperature || 0).toFixed(1);
+      el('kpiHum').textContent = Number(last.humidity || 0).toFixed(1);
+      el('kpiSoil').textContent = Number(last.soil_moisture || 0).toFixed(1);
+    }
+  }
+
+  async function refreshAll() {
+    try {
+      const [overview, devices, alerts, waterToday, zones] = await Promise.all([
+        request('/api/system/overview', { headers: authHeaders() }),
+        request('/api/device/list', { headers: authHeaders() }),
+        request('/api/alert/logs?page=1&page_size=20', { headers: authHeaders() }),
+        request('/api/water/today', { headers: authHeaders() }),
+        request('/api/zone', { headers: authHeaders() }),
+      ]);
+
+      renderSystem(overview);
+      renderDevices(devices);
+      renderZones(zones, devices);
+      renderAlerts(alerts.items || []);
+
+      el('kpiWater').textContent = Number(waterToday.total_liters || 0).toFixed(1);
+      el('kpiWaterDesc').textContent = `L · ${waterToday.date || ''}`;
+
+      await Promise.all([
+        refreshTrend(),
+        refreshWeatherRisk(),
+        refreshZoneHeatmap(zones),
+        refreshDeviceHealthRank(),
+      ]);
+
+      setConn('Connected', 'ok');
+      setStatus('Dashboard refreshed', 'ok');
+    } catch (err) {
+      setConn('Failed', 'danger');
+      setStatus(`Refresh failed: ${err.message}`, 'danger');
+    }
+  }
+
+  function connectWs() {
+    if (!state.token) {
+      setWs('Unauthorized', 'warn');
+      return;
+    }
+    if (state.ws) {
+      state.ws.close();
+      state.ws = null;
+    }
+
+    try {
+      const base = state.baseUrl.replace(/^http/, 'ws').replace(/\/$/, '');
+      const ws = new WebSocket(`${base}/ws/realtime?token=${encodeURIComponent(state.token)}`);
+
+      ws.onopen = () => setWs('Connected', 'ok');
+      ws.onclose = () => {
+        setWs('Disconnected', 'warn');
+        setTimeout(connectWs, 3000);
+      };
+      ws.onerror = () => setWs('Error', 'danger');
+      ws.onmessage = (evt) => {
+        try {
+          const data = JSON.parse(evt.data || '{}');
+          if (data.type === 'sensor_data') appendRealtimePoint(data.data);
+          if (data.type === 'alert') refreshAll();
+          if (data.type === 'device_status') refreshAll();
+        } catch {
+        }
+      };
+
+      state.ws = ws;
+    } catch {
+      setWs('Unavailable', 'warn');
+    }
+  }
+
+  function startPolling() {
+    if (state.polling) clearInterval(state.polling);
+    state.polling = setInterval(refreshAll, 5000);
+    el('refreshTick').textContent = '5s';
+  }
+
+  function bindEvents() {
+    el('baseUrl').value = state.baseUrl;
+    el('tokenInput').value = state.token;
+
+    el('saveTokenBtn').onclick = () => {
+      state.baseUrl = el('baseUrl').value.trim() || 'http://127.0.0.1:8000';
+      state.token = el('tokenInput').value.trim();
+      localStorage.setItem('bigscreen_base_url', state.baseUrl);
+      localStorage.setItem('bigscreen_token', state.token);
+      setStatus('Config saved', 'ok');
+      refreshAll();
+      connectWs();
+    };
+
+    el('loginBtn').onclick = login;
+    el('refreshBtn').onclick = refreshAll;
+    el('fullscreenBtn').onclick = toggleFullscreen;
+    el('rotateBtn').onclick = () => setRotate(!state.rotateEnabled);
+
+    document.addEventListener('keydown', (evt) => {
+      if (evt.key.toLowerCase() === 'f') toggleFullscreen();
+      if (evt.key.toLowerCase() === 'p') setRotate(!state.rotateEnabled);
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      state.fullscreen = Boolean(document.fullscreenElement);
+      el('fullscreenBtn').textContent = state.fullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+      document.querySelector('.screen').classList.toggle('full-mode', state.fullscreen);
+    });
+  }
+
+  async function init() {
+    bindEvents();
+    setClock();
+    setInterval(setClock, 1000);
+    await refreshAll();
+    connectWs();
+    startPolling();
+    startRotate();
+  }
+
+  init();
+</script>
+</body>
+</html>

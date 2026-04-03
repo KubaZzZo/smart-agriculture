@@ -1,4 +1,16 @@
-from sqlalchemy import Column, Integer, BigInteger, Float, String, Text, DateTime, SmallInteger, JSON, ForeignKey
+from sqlalchemy import (
+    Column,
+    Integer,
+    BigInteger,
+    Float,
+    String,
+    Text,
+    DateTime,
+    SmallInteger,
+    JSON,
+    ForeignKey,
+    UniqueConstraint,
+)
 from sqlalchemy.sql import func
 from .database import Base
 
@@ -20,7 +32,7 @@ class Device(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     device_name = Column(String(100), nullable=False)
-    device_type = Column(String(50), nullable=False)
+    device_type = Column(String(50), nullable=False, unique=True)
     status = Column(SmallInteger, default=0)
     params = Column(JSON, default=dict)
     created_at = Column(DateTime, server_default=func.now())
@@ -31,7 +43,7 @@ class AlertRule(Base):
     __tablename__ = "alert_rule"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    metric_name = Column(String(30), nullable=False)
+    metric_name = Column(String(30), nullable=False, unique=True)
     min_value = Column(Float, nullable=False)
     max_value = Column(Float, nullable=False)
     is_enabled = Column(SmallInteger, default=1)
@@ -97,7 +109,7 @@ class Zone(Base):
     __tablename__ = "zone"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    zone_name = Column(String(100), nullable=False)
+    zone_name = Column(String(100), nullable=False, unique=True)
     zone_type = Column(String(30), nullable=False, default="greenhouse")
     description = Column(String(255), default="")
     is_active = Column(SmallInteger, default=1)
@@ -106,6 +118,7 @@ class Zone(Base):
 
 class ZoneDevice(Base):
     __tablename__ = "zone_device"
+    __table_args__ = (UniqueConstraint("zone_id", "device_id", name="uk_zone_device"),)
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     zone_id = Column(Integer, ForeignKey("zone.id", ondelete="CASCADE"), nullable=False)
@@ -165,4 +178,16 @@ class WaterUsage(Base):
     usage_liters = Column(Float, nullable=False)
     duration_seconds = Column(Integer, default=0)
     usage_date = Column(String(10), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class AuthAuditLog(Base):
+    __tablename__ = "auth_audit_log"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    event_type = Column(String(30), nullable=False)
+    username = Column(String(50), default="")
+    ip = Column(String(64), default="")
+    status = Column(String(20), default="ok")
+    reason = Column(String(255), default="")
     created_at = Column(DateTime, server_default=func.now())

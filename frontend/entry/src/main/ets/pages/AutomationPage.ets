@@ -1,7 +1,6 @@
-// 智慧农业 - 联动规则页面
-import { router } from '@kit.ArkUI';
+﻿import { router } from '@kit.ArkUI';
 import { ApiService } from '../common/ApiService';
-import { ApiConstants, AppColors, MetricNames, DeviceTypes } from '../common/Constants';
+import { ApiConstants, AppColors, MetricNames } from '../common/Constants';
 import { AutomationRule, DeviceInfo, AutomationCreateRequest, AutomationUpdateRequest } from '../model/DataModels';
 
 @Entry
@@ -9,9 +8,8 @@ import { AutomationRule, DeviceInfo, AutomationCreateRequest, AutomationUpdateRe
 struct AutomationPage {
   @State rules: AutomationRule[] = [];
   @State devices: DeviceInfo[] = [];
-  @State loading: boolean = true;
   @State showAdd: boolean = false;
-  // 新增规则表单
+
   @State newMetric: string = 'soil_moisture';
   @State newCondition: string = 'lt';
   @State newValue: number = 30;
@@ -23,157 +21,275 @@ struct AutomationPage {
   }
 
   async loadData(): Promise<void> {
-    this.loading = true;
     try {
       this.rules = await ApiService.get<AutomationRule[]>(ApiConstants.AUTOMATION_LIST);
       this.devices = await ApiService.get<DeviceInfo[]>(ApiConstants.DEVICE_LIST);
-    } catch (e) {
-      const ap1: Record<string, number> = {};
-      const ap2: Record<string, number> = { 'brightness': 80 };
-      const r1: AutomationRule = { id: 1, trigger_metric: 'soil_moisture', trigger_condition: 'lt', trigger_value: 30,
-        action_device_id: 2, action_type: 'on', action_params: ap1, is_enabled: 1,
-        created_at: '', updated_at: '' };
-      const r2: AutomationRule = { id: 2, trigger_metric: 'light_intensity', trigger_condition: 'lt', trigger_value: 5000,
-        action_device_id: 3, action_type: 'on', action_params: ap2, is_enabled: 1,
-        created_at: '', updated_at: '' };
+    } catch (_e) {
+      const p1: Record<string, number> = {};
+      const p2: Record<string, number> = {};
+      p2['brightness'] = 80;
+
+      const r1: AutomationRule = {
+        id: 1,
+        trigger_metric: 'soil_moisture',
+        trigger_condition: 'lt',
+        trigger_value: 30,
+        action_device_id: 2,
+        action_type: 'on',
+        action_params: p1,
+        is_enabled: 1,
+        created_at: '',
+        updated_at: '',
+      };
+      const r2: AutomationRule = {
+        id: 2,
+        trigger_metric: 'light_intensity',
+        trigger_condition: 'lt',
+        trigger_value: 5000,
+        action_device_id: 3,
+        action_type: 'on',
+        action_params: p2,
+        is_enabled: 1,
+        created_at: '',
+        updated_at: '',
+      };
       this.rules = [r1, r2];
-    } finally {
-      this.loading = false;
     }
   }
 
   async toggleRule(rule: AutomationRule): Promise<void> {
-    const newEnabled = rule.is_enabled === 1 ? 0 : 1;
+    const nextEnabled: number = rule.is_enabled === 1 ? 0 : 1;
     try {
-      const body: AutomationUpdateRequest = { is_enabled: newEnabled };
-      await ApiService.put<object>(`${ApiConstants.AUTOMATION_LIST.replace('/list', '')}/${rule.id}`, body);
-    } catch (e) { /* offline */ }
-    const idx = this.rules.findIndex((r: AutomationRule) => r.id === rule.id);
-    if (idx >= 0) {
-      const old: AutomationRule = this.rules[idx];
-      const updated: AutomationRule = {
-        id: old.id, trigger_metric: old.trigger_metric, trigger_condition: old.trigger_condition,
-        trigger_value: old.trigger_value, action_device_id: old.action_device_id,
-        action_type: old.action_type, action_params: old.action_params,
-        is_enabled: newEnabled, created_at: old.created_at, updated_at: old.updated_at
+      const body: AutomationUpdateRequest = { is_enabled: nextEnabled };
+      await ApiService.put<object>(`${ApiConstants.AUTOMATION_LIST}/${rule.id}`, body);
+    } catch (_e) {
+      // Ignore offline errors.
+    }
+
+    const index: number = this.rules.findIndex((item: AutomationRule): boolean => item.id === rule.id);
+    if (index >= 0) {
+      const old: AutomationRule = this.rules[index];
+      this.rules[index] = {
+        id: old.id,
+        trigger_metric: old.trigger_metric,
+        trigger_condition: old.trigger_condition,
+        trigger_value: old.trigger_value,
+        action_device_id: old.action_device_id,
+        action_type: old.action_type,
+        action_params: old.action_params,
+        is_enabled: nextEnabled,
+        created_at: old.created_at,
+        updated_at: old.updated_at,
       };
-      this.rules[idx] = updated;
+      this.rules = this.rules.slice();
     }
   }
 
   async addRule(): Promise<void> {
     try {
-      const ap: Record<string, number> = {};
+      const params: Record<string, number> = {};
       const body: AutomationCreateRequest = {
         trigger_metric: this.newMetric,
         trigger_condition: this.newCondition,
         trigger_value: this.newValue,
         action_device_id: this.newDeviceId,
         action_type: this.newAction,
-        action_params: ap,
-        is_enabled: 1
+        action_params: params,
+        is_enabled: 1,
       };
-      await ApiService.post<object>(ApiConstants.AUTOMATION_LIST.replace('/list', ''), body);
+      await ApiService.post<object>(ApiConstants.AUTOMATION_LIST, body);
       this.showAdd = false;
       this.loadData();
-    } catch (e) { /* offline */ }
+    } catch (_e) {
+      // Ignore offline errors.
+    }
   }
 
-  getConditionText(cond: string): string {
-    const map: Record<string, string> = { 'lt': '<', 'gt': '>', 'eq': '=' };
-    return map[cond] || cond;
+  conditionText(condition: string): string {
+    if (condition === 'lt') return '<';
+    if (condition === 'gt') return '>';
+    if (condition === 'eq') return '=';
+    return condition;
   }
 
-  getDeviceName(id: number): string {
-    const d = this.devices.find((dev: DeviceInfo) => dev.id === id);
-    return d ? d.device_name : `设备${id}`;
+  actionText(action: string): string {
+    return action === 'on' ? '开启' : '关闭';
   }
 
-  build() {
+  deviceName(id: number): string {
+    const device: DeviceInfo | undefined = this.devices.find((item: DeviceInfo): boolean => item.id === id);
+    return device ? device.device_name : `设备${id}`;
+  }
+
+  build(): void {
     Column() {
       Row() {
-        Text('< 返回').fontSize(15).fontColor(AppColors.PRIMARY)
-          .onClick(() => { router.back(); })
-        Text('联动规则').fontSize(18).fontWeight(FontWeight.Bold)
-          .fontColor(AppColors.TEXT_PRIMARY).margin({ left: 12 })
-        Blank()
-        Text('+ 新增').fontSize(14).fontColor(AppColors.PRIMARY)
-          .onClick(() => { this.showAdd = !this.showAdd; })
+        Text('< 返回')
+          .fontSize(15)
+          .fontColor(AppColors.PRIMARY)
+          .onClick((): void => {
+            router.back();
+          });
+
+        Text('联动规则')
+          .fontSize(18)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(AppColors.TEXT_PRIMARY)
+          .margin({ left: 12 });
+
+        Blank();
+
+        Text(this.showAdd ? '取消' : '+ 新增')
+          .fontSize(14)
+          .fontColor(AppColors.PRIMARY)
+          .onClick((): void => {
+            this.showAdd = !this.showAdd;
+          });
       }
       .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+      .padding({ left: 16, right: 16, top: 12, bottom: 10 });
 
-      // 新增规则面板
       if (this.showAdd) {
         Column() {
-          Text('新增联动规则').fontSize(15).fontWeight(FontWeight.Medium)
-            .fontColor(AppColors.TEXT_PRIMARY).width('100%').margin({ bottom: 10 })
+          Text('新增联动规则')
+            .fontSize(14)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(AppColors.TEXT_PRIMARY)
+            .width('100%');
+
           Row() {
-            Text('当').fontSize(13).margin({ right: 6 })
+            Text('当')
+              .fontSize(13)
+              .fontColor(AppColors.TEXT_SECONDARY)
+              .margin({ right: 8 });
             Select([
-              { value: 'temperature' }, { value: 'humidity' },
-              { value: 'soil_moisture' }, { value: 'light_intensity' }, { value: 'co2_level' }
+              { value: 'temperature' },
+              { value: 'humidity' },
+              { value: 'soil_moisture' },
+              { value: 'light_intensity' },
+              { value: 'co2_level' },
             ])
               .selected(2)
               .value(MetricNames.MAP[this.newMetric] || this.newMetric)
               .font({ size: 13 })
-              .onSelect((idx: number, val: string) => { this.newMetric = val; })
-          }.width('100%')
+              .onSelect((_i: number, val: string): void => {
+                this.newMetric = val;
+              });
+          }
+          .width('100%')
+          .margin({ top: 10 });
+
           Row() {
             Select([{ value: 'lt' }, { value: 'gt' }, { value: 'eq' }])
-              .selected(0).value(this.getConditionText(this.newCondition))
+              .selected(0)
+              .value(this.conditionText(this.newCondition))
               .font({ size: 13 })
-              .onSelect((idx: number, val: string) => { this.newCondition = val; })
+              .onSelect((_i: number, val: string): void => {
+                this.newCondition = val;
+              });
+
             TextInput({ text: this.newValue.toString() })
-              .type(InputType.Number).width(80).height(36).fontSize(13)
+              .type(InputType.Number)
+              .width(90)
+              .height(36)
+              .fontSize(13)
               .margin({ left: 8 })
-              .onChange((v: string) => { this.newValue = parseFloat(v) || 0; })
-          }.width('100%').margin({ top: 8 })
+              .onChange((value: string): void => {
+                this.newValue = parseFloat(value) || 0;
+              });
+          }
+          .width('100%')
+          .margin({ top: 8 });
+
           Row() {
-            Text('则').fontSize(13).margin({ right: 6 })
+            Text('则')
+              .fontSize(13)
+              .fontColor(AppColors.TEXT_SECONDARY)
+              .margin({ right: 8 });
+
             Select([{ value: 'on' }, { value: 'off' }])
-              .selected(0).value(this.newAction === 'on' ? '开启' : '关闭')
+              .selected(0)
+              .value(this.actionText(this.newAction))
               .font({ size: 13 })
-              .onSelect((idx: number, val: string) => { this.newAction = val; })
-            Text('设备ID:').fontSize(13).margin({ left: 8 })
+              .onSelect((_i: number, val: string): void => {
+                this.newAction = val;
+              });
+
+            Text('设备编号')
+              .fontSize(13)
+              .fontColor(AppColors.TEXT_SECONDARY)
+              .margin({ left: 10, right: 6 });
+
             TextInput({ text: this.newDeviceId.toString() })
-              .type(InputType.Number).width(50).height(36).fontSize(13)
-              .margin({ left: 4 })
-              .onChange((v: string) => { this.newDeviceId = parseInt(v) || 1; })
-          }.width('100%').margin({ top: 8 })
-          Button('添加规则')
-            .width('100%').height(36).borderRadius(18)
-            .backgroundColor(AppColors.PRIMARY).fontColor('#FFFFFF').fontSize(14)
+              .type(InputType.Number)
+              .width(60)
+              .height(36)
+              .fontSize(13)
+              .onChange((value: string): void => {
+                this.newDeviceId = parseInt(value) || 1;
+              });
+          }
+          .width('100%')
+          .margin({ top: 8 });
+
+          Button('保存规则')
+            .width('100%')
+            .height(40)
+            .borderRadius(20)
+            .backgroundColor(AppColors.PRIMARY)
+            .fontColor('#FFFFFF')
+            .fontSize(14)
             .margin({ top: 12 })
-            .onClick(() => { this.addRule(); })
+            .onClick((): void => {
+              this.addRule();
+            });
         }
-        .width('100%').padding(14).margin({ left: 12, right: 12, bottom: 8 })
-        .backgroundColor('#E8F5E9').borderRadius(12)
+        .width('100%')
+        .padding(14)
+        .margin({ left: 12, right: 12, bottom: 10 })
+        .backgroundColor(AppColors.CARD_BG)
+        .borderRadius(14)
+        .shadow({ radius: 6, color: '#12000000', offsetX: 0, offsetY: 3 });
       }
 
-      // 规则列表
       List({ space: 8 }) {
         ForEach(this.rules, (rule: AutomationRule) => {
           ListItem() {
             Row() {
               Column() {
-                Text(`${MetricNames.MAP[rule.trigger_metric] || rule.trigger_metric} ${this.getConditionText(rule.trigger_condition)} ${rule.trigger_value}`)
-                  .fontSize(14).fontWeight(FontWeight.Medium).fontColor(AppColors.TEXT_PRIMARY)
-                Text(`→ ${this.getDeviceName(rule.action_device_id)} ${rule.action_type === 'on' ? '开启' : '关闭'}`)
-                  .fontSize(12).fontColor(AppColors.TEXT_SECONDARY).margin({ top: 4 })
-              }.alignItems(HorizontalAlign.Start).layoutWeight(1)
+                Text(`${MetricNames.MAP[rule.trigger_metric] || rule.trigger_metric} ${this.conditionText(rule.trigger_condition)} ${rule.trigger_value}`)
+                  .fontSize(14)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor(AppColors.TEXT_PRIMARY);
+
+                Text(`动作：${this.deviceName(rule.action_device_id)} ${this.actionText(rule.action_type)}`)
+                  .fontSize(12)
+                  .fontColor(AppColors.TEXT_SECONDARY)
+                  .margin({ top: 4 });
+              }
+              .alignItems(HorizontalAlign.Start)
+              .layoutWeight(1);
+
               Toggle({ type: ToggleType.Switch, isOn: rule.is_enabled === 1 })
                 .selectedColor(AppColors.PRIMARY)
-                .onChange(() => { this.toggleRule(rule); })
+                .onChange((): void => {
+                  this.toggleRule(rule);
+                });
             }
-            .width('100%').padding(14)
-            .backgroundColor(AppColors.CARD_BG).borderRadius(12)
-            .shadow({ radius: 4, color: '#1A000000', offsetX: 0, offsetY: 2 })
+            .width('100%')
+            .padding(14)
+            .backgroundColor(AppColors.CARD_BG)
+            .borderRadius(14)
+            .shadow({ radius: 6, color: '#12000000', offsetX: 0, offsetY: 3 });
           }
-        })
+        });
       }
-      .width('100%').layoutWeight(1).padding({ left: 12, right: 12 })
+      .width('100%')
+      .layoutWeight(1)
+      .padding({ left: 12, right: 12, bottom: 10 });
     }
-    .width('100%').height('100%').backgroundColor(AppColors.BG)
+    .width('100%')
+    .height('100%')
+    .backgroundColor(AppColors.BG);
   }
 }

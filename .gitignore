@@ -26,3 +26,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local model binaries (use local mount or artifact storage)
+backend/models/**/*.pt

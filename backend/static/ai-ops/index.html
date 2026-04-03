@@ -1,0 +1,962 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI运维中心</title>
+  <style>
+    :root {
+      --bg: #eef4f0;
+      --panel: #ffffff;
+      --text: #1a2b22;
+      --sub: #5b6d63;
+      --primary: #1e8a5a;
+      --primary-dark: #0e4f35;
+      --warn: #cf3d3d;
+      --border: #dde8e0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: radial-gradient(circle at 0% 0%, #f7fbf8 0%, var(--bg) 45%, #e8f1ec 100%);
+      color: var(--text);
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .head {
+      background: linear-gradient(120deg, var(--primary-dark) 0%, var(--primary) 75%);
+      color: #fff;
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 12px 24px #0f4f3526;
+    }
+    .head h1 { margin: 0; font-size: 28px; }
+    .head p { margin: 8px 0 0; color: #dff2e8; }
+    .grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 12px;
+    }
+    .card {
+      grid-column: span 12;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 8px 16px #0000000a;
+    }
+    .card h3 { margin: 0 0 10px; font-size: 16px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .row > * { flex: 1 1 180px; }
+    label { display: block; font-size: 12px; color: var(--sub); margin-bottom: 4px; }
+    input, select, textarea, button {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      font-size: 14px;
+      background: #fff;
+      color: var(--text);
+    }
+    textarea { min-height: 120px; font-family: Consolas, monospace; }
+    button {
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform .12s ease, background .2s ease;
+    }
+    button:hover { transform: translateY(-1px); background: #177349; }
+    button.warn { background: var(--warn); }
+    pre {
+      margin: 0;
+      padding: 10px;
+      border-radius: 10px;
+      background: #f3f7f4;
+      border: 1px solid var(--border);
+      overflow: auto;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      padding: 8px 6px;
+    }
+    .tips { font-size: 12px; color: var(--sub); }
+    .flow {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: #f7fbf8;
+    }
+    .flow-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .flow-step {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      min-width: 180px;
+      box-shadow: 0 4px 10px #00000008;
+    }
+    .flow-step b { font-size: 12px; }
+    .flow-step div { font-size: 12px; color: var(--sub); margin-top: 4px; }
+    .arrow {
+      font-size: 16px;
+      color: #78a58d;
+      font-weight: bold;
+    }
+    .timeline {
+      max-height: 240px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #f7fbf8;
+      padding: 8px;
+    }
+    .timeline-item {
+      border-left: 3px solid var(--primary);
+      padding: 6px 8px;
+      margin: 0 0 8px 4px;
+      background: #fff;
+      border-radius: 6px;
+    }
+    .timeline-time {
+      font-size: 11px;
+      color: var(--sub);
+      margin-bottom: 4px;
+    }
+    .timeline-type {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .timeline-detail {
+      font-size: 12px;
+      color: var(--sub);
+      white-space: pre-wrap;
+    }
+    .ok { color: #1b7b4f; }
+    .mid { color: #a35a2a; }
+    .bad { color: #cf3d3d; }
+    @media (min-width: 960px) {
+      .col-6 { grid-column: span 6; }
+      .col-4 { grid-column: span 4; }
+      .col-8 { grid-column: span 8; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="head">
+      <h1>AI运维中心</h1>
+      <p>天气预测调控 · 断网自治队列 · 害虫识别 · 微气候协同建议</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h3>连接配置</h3>
+        <div class="row">
+          <div>
+            <label>API 地址</label>
+            <input id="baseUrl" value="http://127.0.0.1:8000" />
+          </div>
+          <div>
+            <label>JWT Token（可选）</label>
+            <input id="token" placeholder="粘贴 Bearer Token（不含 Bearer 前缀）" />
+          </div>
+        </div>
+      </article>
+
+      <article class="card col-8">
+        <h3>天气预测与调控建议</h3>
+        <div class="row">
+          <div>
+            <label>预测时长（小时）</label>
+            <input id="hours" type="number" min="1" max="72" value="24" />
+          </div>
+          <div style="max-width:220px; align-self:flex-end;">
+            <button id="btnForecast">获取预测</button>
+          </div>
+        </div>
+        <div class="tips" id="forecastTips" style="margin:8px 0 10px;"></div>
+        <div style="max-height:260px; overflow:auto;">
+          <table id="forecastTable">
+            <thead><tr><th>时间</th><th>温度</th><th>湿度</th><th>天气</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card col-4">
+        <h3>断网自治状态</h3>
+        <div class="row">
+          <div>
+            <button id="btnEdgeStatus">刷新状态</button>
+          </div>
+          <div>
+            <select id="networkMode">
+              <option value="true">在线</option>
+              <option value="false">离线</option>
+            </select>
+          </div>
+          <div>
+            <button id="btnSetNetwork">设置网络</button>
+          </div>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <div>
+            <label>任务ID</label>
+            <input id="taskId" value="task-001" />
+          </div>
+          <div>
+            <label>动作</label>
+            <input id="taskAction" value="device_control" />
+          </div>
+        </div>
+        <label style="margin-top:8px;">任务载荷（JSON）</label>
+        <textarea id="taskPayload">{"device_id": 2, "status": 1}</textarea>
+        <button id="btnQueue" style="margin-top:8px;">提交控制任务</button>
+        <pre id="edgeResult" style="margin-top:10px;">{}</pre>
+      </article>
+
+      <article class="card col-6">
+        <h3>叶片害虫最终结果（Web端）</h3>
+        <div class="tips">Web端仅展示汇总结果，实时识别在手机端完成。</div>
+        <div class="row" style="margin-top:8px;">
+          <div>
+            <label>统计窗口（分钟）</label>
+            <input id="pestWindowMinutes" type="number" min="1" max="1440" value="60" />
+          </div>
+          <div>
+            <label>数据来源</label>
+            <select id="pestSource">
+              <option value="mobile">手机端</option>
+              <option value="all">全部</option>
+              <option value="web">Web端</option>
+            </select>
+          </div>
+          <div style="max-width:220px; align-self:flex-end;">
+            <button id="btnPestSummary">刷新最终结果</button>
+          </div>
+        </div>
+        <pre id="pestResult" style="margin-top:10px;">{}</pre>
+      </article>
+
+      <article class="card col-6">
+        <h3>微气候矩阵协同优化</h3>
+        <div class="tips">填写多个区域当前值与目标值，返回每个区域调控动作建议。</div>
+        <textarea id="zonePayload">{
+  "zones": [
+    {
+      "zone_id": 1,
+      "zone_name": "1号温室",
+      "temperature": 31,
+      "humidity": 84,
+      "soil_moisture": 39,
+      "target_temperature": 26,
+      "target_humidity": 68,
+      "target_soil_moisture": 52
+    },
+    {
+      "zone_id": 2,
+      "zone_name": "2号温室",
+      "temperature": 24,
+      "humidity": 60,
+      "soil_moisture": 56,
+      "target_temperature": 25,
+      "target_humidity": 65,
+      "target_soil_moisture": 50
+    }
+  ]
+}</textarea>
+        <div class="row" style="margin-top:8px;">
+          <div>
+            <button id="btnOptimize">生成协同建议</button>
+          </div>
+          <div>
+            <button id="btnExecuteStrategy">一键执行建议</button>
+          </div>
+        </div>
+        <pre id="microResult" style="margin-top:10px;">{}</pre>
+      </article>
+
+      <article class="card col-12">
+        <h3>告警联动视图</h3>
+        <div class="row">
+          <div>
+            <label>事件场景</label>
+            <select id="incidentScenario">
+              <option value="pest_detect">叶片害虫识别告警</option>
+              <option value="weather_risk">天气风险告警</option>
+              <option value="generic">通用异常告警</option>
+            </select>
+          </div>
+          <div>
+            <label>风险等级</label>
+            <select id="incidentRisk">
+              <option value="high">高</option>
+              <option value="medium" selected>中</option>
+              <option value="low">低</option>
+            </select>
+          </div>
+          <div>
+            <label>区域名称</label>
+            <input id="incidentZoneName" value="1号温室" />
+          </div>
+          <div>
+            <label>是否自动入队</label>
+            <select id="incidentAuto">
+              <option value="false" selected>否</option>
+              <option value="true">是</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <div>
+            <button id="btnBuildPlan">生成处置流程</button>
+          </div>
+          <div>
+            <button id="btnPlanAndQueue">生成并自动入队</button>
+          </div>
+        </div>
+        <pre id="incidentResult" style="margin-top:10px;">{}</pre>
+        <div id="incidentFlow" class="flow"></div>
+      </article>
+
+      <article class="card col-12">
+        <h3>执行状态时间线</h3>
+        <div class="row">
+          <div>
+            <label>历史条数</label>
+            <input id="historyLimit" type="number" min="1" max="300" value="80" />
+          </div>
+          <div style="max-width:220px; align-self:flex-end;">
+            <button id="btnHistory">刷新时间线</button>
+          </div>
+        </div>
+        <div id="historyTimeline" class="timeline" style="margin-top:8px;"></div>
+      </article>
+
+      <article class="card col-12">
+        <h3>死信队列（最终失败任务）</h3>
+        <div class="row">
+          <div>
+            <label>死信条数</label>
+            <input id="deadLimit" type="number" min="1" max="300" value="80" />
+          </div>
+          <div style="max-width:220px; align-self:flex-end;">
+            <button id="btnDeadRefresh">刷新死信</button>
+          </div>
+          <div style="max-width:220px; align-self:flex-end;">
+            <button id="btnDrainNow">立即排空执行</button>
+          </div>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <div>
+            <label>回灌任务ID</label>
+            <input id="deadTaskId" placeholder="输入 task_id" />
+          </div>
+          <div style="max-width:220px; align-self:flex-end;">
+            <button id="btnDeadRequeue">回灌到待执行队列</button>
+          </div>
+        </div>
+        <pre id="deadResult" style="margin-top:10px;">{}</pre>
+      </article>
+
+      <article class="card col-12">
+        <h3>AI运维审计</h3>
+        <div class="row">
+          <div>
+            <label>审计条数</label>
+            <input id="auditLimit" type="number" min="1" max="2000" value="200" />
+          </div>
+          <div style="max-width:220px; align-self:flex-end;">
+            <button id="btnAuditRefresh">刷新审计</button>
+          </div>
+          <div style="max-width:220px; align-self:flex-end;">
+            <button id="btnAuditExport">导出CSV</button>
+          </div>
+        </div>
+        <pre id="auditResult" style="margin-top:10px;">{}</pre>
+      </article>
+
+      <article class="card col-12">
+        <h3>权限策略矩阵</h3>
+        <div class="tips">按动作配置允许角色，保存后立即生效。格式示例：{"edge_network":["admin"]}</div>
+        <div class="row" style="margin-top:8px;">
+          <div style="max-width:220px;">
+            <button id="btnPolicyRefresh">读取策略</button>
+          </div>
+          <div style="max-width:220px;">
+            <button id="btnPolicySave">保存策略</button>
+          </div>
+          <div>
+            <select id="policyTemplateSelect">
+              <option value="standard">标准模板</option>
+              <option value="strict">严格模板</option>
+              <option value="demo">演示模板</option>
+            </select>
+          </div>
+          <div style="max-width:220px;">
+            <button id="btnPolicyDiff">预览模板差异</button>
+          </div>
+          <div style="max-width:220px;">
+            <button id="btnPolicyApplyTemplate">应用模板</button>
+          </div>
+        </div>
+        <label style="margin-top:8px;">策略 JSON（仅填写 permissions 对象）</label>
+        <textarea id="policyInput">{
+  "edge_status": ["admin", "operator", "viewer", "user"],
+  "edge_history": ["admin", "operator", "viewer", "user"],
+  "edge_dead_letter": ["admin", "operator"],
+  "edge_control": ["admin", "operator"],
+  "edge_network": ["admin"],
+  "edge_drain": ["admin"],
+  "edge_requeue_dead": ["admin"],
+  "microclimate_optimize": ["admin", "operator", "viewer", "user"],
+  "microclimate_execute": ["admin", "operator"],
+  "incident_plan": ["admin", "operator", "viewer", "user"],
+  "incident_auto_enqueue": ["admin", "operator"],
+  "audit_view": ["admin"],
+  "audit_export": ["admin"],
+  "authz_policy_read": ["admin", "operator", "viewer"],
+  "authz_policy_update": ["admin"]
+}</textarea>
+        <pre id="policyResult" style="margin-top:10px;">{}</pre>
+        <pre id="policyDiff" style="margin-top:10px;">{}</pre>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    function base() {
+      return document.getElementById('baseUrl').value.replace(/\/$/, '');
+    }
+
+    function headers(contentType) {
+      const h = {};
+      const t = document.getElementById('token').value.trim();
+      if (t) h['Authorization'] = `Bearer ${t}`;
+      if (contentType) h['Content-Type'] = contentType;
+      return h;
+    }
+
+    async function api(path, options = {}) {
+      const res = await fetch(`${base()}${path}`, {
+        ...options,
+        headers: {
+          ...(options.headers || {}),
+        },
+      });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = { raw: text }; }
+      if (!res.ok) {
+        if (res.status === 403) {
+          throw new Error('权限不足：该操作需要管理员账号');
+        }
+        throw new Error(JSON.stringify(data, null, 2));
+      }
+      return data;
+    }
+
+    function pretty(obj) {
+      return JSON.stringify(obj, null, 2);
+    }
+
+    function renderIncidentFlow(data) {
+      const container = document.getElementById('incidentFlow');
+      const steps = (data && data.steps) ? data.steps : [];
+      if (!steps.length) {
+        container.innerHTML = '<div class="tips">暂无流程图，请先生成处置流程。</div>';
+        return;
+      }
+      const line = document.createElement('div');
+      line.className = 'flow-line';
+      steps.forEach((s, idx) => {
+        const node = document.createElement('div');
+        node.className = 'flow-step';
+        node.innerHTML = `<b>${s.order}. ${s.title}</b><div>${s.detail}</div>`;
+        line.appendChild(node);
+        if (idx < steps.length - 1) {
+          const arrow = document.createElement('span');
+          arrow.className = 'arrow';
+          arrow.textContent = '→';
+          line.appendChild(arrow);
+        }
+      });
+      container.innerHTML = '';
+      container.appendChild(line);
+    }
+
+    async function refreshHistory() {
+      const timeline = document.getElementById('historyTimeline');
+      timeline.textContent = '加载中...';
+      try {
+        const limit = Number(document.getElementById('historyLimit').value || '80');
+        const data = await api(`/api/ai/edge/history?limit=${limit}`, { headers: headers() });
+        const items = (data.items || []).slice().reverse();
+        if (!items.length) {
+          timeline.innerHTML = '<div class="tips">暂无执行记录</div>';
+          return;
+        }
+        timeline.innerHTML = '';
+        items.forEach((it) => {
+          const div = document.createElement('div');
+          div.className = 'timeline-item';
+          const typeMap = {
+            network_changed: '网络状态变更',
+            task_queued: '任务入队',
+            task_executed: '任务执行',
+            task_flushed: '离线任务补偿执行',
+            task_retry_scheduled: '任务重试排队',
+            task_failed_final: '任务最终失败',
+            task_requeued_from_dead_letter: '死信任务回灌',
+          };
+          div.innerHTML = `
+            <div class="timeline-time">${(it.created_at || '').replace('T', ' ').slice(0, 19)}</div>
+            <div class="timeline-type">${typeMap[it.event_type] || it.event_type}</div>
+            <div class="timeline-detail">${pretty(it.detail || {})}</div>
+          `;
+          timeline.appendChild(div);
+        });
+      } catch (e) {
+        timeline.textContent = e.message;
+      }
+    }
+
+    async function refreshDeadLetter() {
+      const out = document.getElementById('deadResult');
+      out.textContent = '加载中...';
+      try {
+        const limit = Number(document.getElementById('deadLimit').value || '80');
+        const data = await api(`/api/ai/edge/dead-letter?limit=${limit}`, { headers: headers() });
+        out.textContent = pretty(data);
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    }
+
+    async function refreshAudit() {
+      const out = document.getElementById('auditResult');
+      out.textContent = '加载中...';
+      try {
+        const limit = Number(document.getElementById('auditLimit').value || '200');
+        const data = await api(`/api/ai/audit?limit=${limit}`, { headers: headers() });
+        out.textContent = pretty(data);
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    }
+
+    async function refreshPestSummary() {
+      const out = document.getElementById('pestResult');
+      out.textContent = '加载中...';
+      try {
+        const windowMinutes = Number(document.getElementById('pestWindowMinutes').value || '60');
+        const source = document.getElementById('pestSource').value || 'mobile';
+        const data = await api(`/api/ai/vision/pest/final-summary?window_minutes=${windowMinutes}&source=${encodeURIComponent(source)}`, {
+          headers: headers(),
+        });
+        const riskCounts = data.risk_counts || {};
+        const latest = data.latest || null;
+        const lines = [
+          `统计窗口: ${data.window_minutes} 分钟`,
+          `来源: ${data.source}`,
+          `总样本数: ${data.total}`,
+          `高风险: ${riskCounts.high || 0}`,
+          `中风险: ${riskCounts.medium || 0}`,
+          `低风险: ${riskCounts.low || 0}`,
+          `平均置信度: ${data.avg_confidence ?? 0}`,
+          `平均图像质量: ${data.avg_quality ?? 0}`,
+          `主要风险类型: ${data.top_pest_type || 'none'}`,
+        ];
+        if (latest) {
+          lines.push('');
+          lines.push('最近一次结果:');
+          lines.push(`- 时间: ${(latest.created_at || '').replace('T', ' ').slice(0, 19)}`);
+          lines.push(`- 风险: ${latest.risk_level}`);
+          lines.push(`- 类型: ${latest.pest_type}`);
+          lines.push(`- 置信度: ${latest.confidence}`);
+          lines.push(`- 质量分: ${latest.quality_score}`);
+        }
+        lines.push('');
+        lines.push('完整结果:');
+        lines.push(pretty(data));
+        out.textContent = lines.join('\n');
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    }
+
+    async function refreshPolicy() {
+      const out = document.getElementById('policyResult');
+      out.textContent = '加载中...';
+      try {
+        const data = await api('/api/ai/authz/policy', { headers: headers() });
+        document.getElementById('policyInput').value = pretty(data.permissions || {});
+        out.textContent = pretty(data);
+        await refreshPolicyTemplates();
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    }
+
+    function computePolicyDiff(currentPolicy, targetPolicy) {
+      const current = currentPolicy || {};
+      const target = targetPolicy || {};
+      const allActions = Array.from(new Set([
+        ...Object.keys(current),
+        ...Object.keys(target),
+      ])).sort();
+      const changed = [];
+      allActions.forEach((action) => {
+        const before = current[action] || [];
+        const after = target[action] || [];
+        const beforeText = JSON.stringify(before);
+        const afterText = JSON.stringify(after);
+        if (beforeText !== afterText) {
+          changed.push({
+            action,
+            before,
+            after,
+          });
+        }
+      });
+      return {
+        changed_count: changed.length,
+        changed,
+      };
+    }
+
+    function renderPolicyDiff(diff) {
+      const out = document.getElementById('policyDiff');
+      out.textContent = pretty(diff);
+    }
+
+    async function refreshPolicyTemplates() {
+      try {
+        const data = await api('/api/ai/authz/templates', { headers: headers() });
+        authzTemplates = data.templates || {};
+        const select = document.getElementById('policyTemplateSelect');
+        const currentValue = select.value;
+        select.innerHTML = '';
+        Object.keys(authzTemplates).forEach((name) => {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = `${name} 模板`;
+          if (name === currentValue) {
+            option.selected = true;
+          }
+          select.appendChild(option);
+        });
+      } catch (e) {
+        document.getElementById('policyDiff').textContent = `模板读取失败: ${e.message}`;
+      }
+    }
+
+    document.getElementById('btnForecast').onclick = async () => {
+      const hours = Number(document.getElementById('hours').value || '24');
+      const tips = document.getElementById('forecastTips');
+      const tbody = document.querySelector('#forecastTable tbody');
+      tips.textContent = '加载中...';
+      tbody.innerHTML = '';
+      try {
+        const data = await api(`/api/ai/weather-forecast?hours=${hours}`, {
+          headers: headers(),
+        });
+        (data.points || []).slice(0, 48).forEach((p) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${p.time.replace('T', ' ').slice(0, 16)}</td><td>${p.temperature}℃</td><td>${p.humidity}%</td><td>${p.weather}</td>`;
+          tbody.appendChild(tr);
+        });
+        tips.innerHTML = (data.suggestions || []).map((s) => `- ${s}`).join('<br/>');
+      } catch (e) {
+        tips.textContent = `请求失败: ${e.message}`;
+      }
+    };
+
+    document.getElementById('btnEdgeStatus').onclick = async () => {
+      const out = document.getElementById('edgeResult');
+      out.textContent = '加载中...';
+      try {
+        const data = await api('/api/ai/edge/status', { headers: headers() });
+        out.textContent = pretty(data);
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    };
+
+    document.getElementById('btnSetNetwork').onclick = async () => {
+      const out = document.getElementById('edgeResult');
+      out.textContent = '提交中...';
+      try {
+        const online = document.getElementById('networkMode').value === 'true';
+        const data = await api('/api/ai/edge/network', {
+          method: 'POST',
+          headers: headers('application/json'),
+          body: JSON.stringify({ online }),
+        });
+        out.textContent = pretty(data);
+        await refreshHistory();
+        await refreshDeadLetter();
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    };
+
+    document.getElementById('btnQueue').onclick = async () => {
+      const out = document.getElementById('edgeResult');
+      out.textContent = '提交中...';
+      try {
+        const task_id = document.getElementById('taskId').value.trim();
+        const action = document.getElementById('taskAction').value.trim();
+        const payload = JSON.parse(document.getElementById('taskPayload').value);
+        const data = await api('/api/ai/edge/control', {
+          method: 'POST',
+          headers: headers('application/json'),
+          body: JSON.stringify({ task_id, action, payload }),
+        });
+        out.textContent = pretty(data);
+        await refreshHistory();
+        await refreshDeadLetter();
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    };
+
+    document.getElementById('btnPestSummary').onclick = async () => {
+      await refreshPestSummary();
+    };
+
+    let lastMicroActions = null;
+    let authzTemplates = {};
+
+    document.getElementById('btnOptimize').onclick = async () => {
+      const out = document.getElementById('microResult');
+      out.textContent = '计算中...';
+      try {
+        const payload = JSON.parse(document.getElementById('zonePayload').value);
+        const data = await api('/api/ai/microclimate/optimize', {
+          method: 'POST',
+          headers: headers('application/json'),
+          body: JSON.stringify(payload),
+        });
+        lastMicroActions = data.actions || [];
+        out.textContent = pretty(data);
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    };
+
+    document.getElementById('btnExecuteStrategy').onclick = async () => {
+      const out = document.getElementById('microResult');
+      out.textContent = '执行中...';
+      try {
+        if (!lastMicroActions || lastMicroActions.length === 0) {
+          throw new Error('请先生成协同建议');
+        }
+        const data = await api('/api/ai/microclimate/execute', {
+          method: 'POST',
+          headers: headers('application/json'),
+          body: JSON.stringify({ actions: lastMicroActions, source: 'ai_ops_web' }),
+        });
+        out.textContent = pretty(data);
+        await refreshHistory();
+        await refreshDeadLetter();
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    };
+
+    async function buildIncidentPlan(autoEnqueue) {
+      const out = document.getElementById('incidentResult');
+      out.textContent = '生成中...';
+      try {
+        const scenario = document.getElementById('incidentScenario').value;
+        const risk_level = document.getElementById('incidentRisk').value;
+        const zone_name = document.getElementById('incidentZoneName').value.trim() || '默认区域';
+        const data = await api('/api/ai/incident/plan', {
+          method: 'POST',
+          headers: headers('application/json'),
+          body: JSON.stringify({
+            scenario,
+            risk_level,
+            zone_name,
+            auto_enqueue: autoEnqueue,
+          }),
+        });
+        out.textContent = pretty(data);
+        renderIncidentFlow(data);
+        if (autoEnqueue) {
+          await refreshHistory();
+        }
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    }
+
+    document.getElementById('btnBuildPlan').onclick = async () => {
+      await buildIncidentPlan(false);
+    };
+
+    document.getElementById('btnPlanAndQueue').onclick = async () => {
+      await buildIncidentPlan(true);
+    };
+
+    document.getElementById('btnHistory').onclick = async () => {
+      await refreshHistory();
+    };
+
+    document.getElementById('btnDeadRefresh').onclick = async () => {
+      await refreshDeadLetter();
+    };
+
+    document.getElementById('btnDeadRequeue').onclick = async () => {
+      const out = document.getElementById('deadResult');
+      out.textContent = '提交中...';
+      try {
+        const taskId = document.getElementById('deadTaskId').value.trim();
+        if (!taskId) throw new Error('请输入任务ID');
+        const data = await api(`/api/ai/edge/dead-letter/${encodeURIComponent(taskId)}/requeue`, {
+          method: 'POST',
+          headers: headers(),
+        });
+        out.textContent = pretty(data);
+        await refreshHistory();
+        await refreshDeadLetter();
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    };
+
+    document.getElementById('btnDrainNow').onclick = async () => {
+      const out = document.getElementById('deadResult');
+      out.textContent = '执行中...';
+      try {
+        const data = await api('/api/ai/edge/drain', {
+          method: 'POST',
+          headers: headers(),
+        });
+        out.textContent = pretty(data);
+        await refreshHistory();
+        await refreshDeadLetter();
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    };
+
+    document.getElementById('btnAuditRefresh').onclick = async () => {
+      await refreshAudit();
+    };
+
+    document.getElementById('btnAuditExport').onclick = async () => {
+      const limit = Number(document.getElementById('auditLimit').value || '1000');
+      const token = document.getElementById('token').value.trim();
+      if (!token) {
+        document.getElementById('auditResult').textContent = '请先填写管理员Token后再导出';
+        return;
+      }
+      const url = `${base()}/api/ai/audit/export.csv?limit=${limit}`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        document.getElementById('auditResult').textContent = text || '导出失败';
+        return;
+      }
+      const blob = await res.blob();
+      const link = document.createElement('a');
+      const objectUrl = URL.createObjectURL(blob);
+      link.href = objectUrl;
+      link.download = 'ai_ops_audit.csv';
+      link.click();
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    document.getElementById('btnPolicyRefresh').onclick = async () => {
+      await refreshPolicy();
+    };
+
+    document.getElementById('btnPolicySave').onclick = async () => {
+      const out = document.getElementById('policyResult');
+      out.textContent = '保存中...';
+      try {
+        const permissions = JSON.parse(document.getElementById('policyInput').value);
+        const data = await api('/api/ai/authz/policy', {
+          method: 'POST',
+          headers: headers('application/json'),
+          body: JSON.stringify({ permissions }),
+        });
+        out.textContent = pretty(data);
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    };
+
+    document.getElementById('btnPolicyDiff').onclick = async () => {
+      const out = document.getElementById('policyDiff');
+      out.textContent = '计算中...';
+      try {
+        if (!Object.keys(authzTemplates).length) {
+          await refreshPolicyTemplates();
+        }
+        const templateName = document.getElementById('policyTemplateSelect').value;
+        const template = authzTemplates[templateName];
+        if (!template) {
+          throw new Error('未找到模板，请先读取策略');
+        }
+        const current = JSON.parse(document.getElementById('policyInput').value);
+        const diff = computePolicyDiff(current, template);
+        renderPolicyDiff({
+          template_name: templateName,
+          ...diff,
+        });
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    };
+
+    document.getElementById('btnPolicyApplyTemplate').onclick = async () => {
+      const out = document.getElementById('policyResult');
+      out.textContent = '应用中...';
+      try {
+        const template_name = document.getElementById('policyTemplateSelect').value;
+        const data = await api('/api/ai/authz/policy/apply-template', {
+          method: 'POST',
+          headers: headers('application/json'),
+          body: JSON.stringify({ template_name }),
+        });
+        document.getElementById('policyInput').value = pretty(data.permissions || {});
+        out.textContent = pretty(data);
+        await refreshPolicyTemplates();
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    };
+
+    renderIncidentFlow(null);
+    refreshHistory();
+    refreshDeadLetter();
+    refreshPestSummary();
+    refreshAudit();
+    refreshPolicy();
+  </script>
+</body>
+</html>

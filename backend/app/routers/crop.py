@@ -1,24 +1,28 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 from ..database import get_db
 from ..models import Crop
-from ..schemas import CropCreate, CropUpdate, CropResponse
+from ..schemas import CropCreate, CropResponse, CropUpdate
 
 router = APIRouter()
 
-GROWTH_STAGES = ["seedling", "vegetative", "flowering", "fruiting", "harvest"]
+GROWTH_STAGES = ['seedling', 'vegetative', 'flowering', 'fruiting', 'harvest']
 STAGE_LABELS = {
-    "seedling": "幼苗期", "vegetative": "生长期",
-    "flowering": "开花期", "fruiting": "结果期", "harvest": "收获期",
+    'seedling': 'Seedling',
+    'vegetative': 'Vegetative',
+    'flowering': 'Flowering',
+    'fruiting': 'Fruiting',
+    'harvest': 'Harvest',
 }
 
 
-@router.get("", response_model=list[CropResponse])
+@router.get('', response_model=list[CropResponse])
 def list_crops(db: Session = Depends(get_db)):
     return db.query(Crop).order_by(Crop.id.desc()).all()
 
 
-@router.post("", response_model=CropResponse)
+@router.post('', response_model=CropResponse)
 def create_crop(body: CropCreate, db: Session = Depends(get_db)):
     crop = Crop(**body.model_dump())
     db.add(crop)
@@ -27,11 +31,12 @@ def create_crop(body: CropCreate, db: Session = Depends(get_db)):
     return crop
 
 
-@router.put("/{crop_id}", response_model=CropResponse)
+@router.put('/{crop_id}', response_model=CropResponse)
 def update_crop(crop_id: int, body: CropUpdate, db: Session = Depends(get_db)):
     crop = db.query(Crop).filter(Crop.id == crop_id).first()
     if not crop:
-        raise HTTPException(status_code=404, detail="作物不存在")
+        raise HTTPException(status_code=404, detail='crop not found')
+
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(crop, field, value)
     db.commit()
@@ -39,11 +44,12 @@ def update_crop(crop_id: int, body: CropUpdate, db: Session = Depends(get_db)):
     return crop
 
 
-@router.delete("/{crop_id}")
+@router.delete('/{crop_id}')
 def delete_crop(crop_id: int, db: Session = Depends(get_db)):
     crop = db.query(Crop).filter(Crop.id == crop_id).first()
     if not crop:
-        raise HTTPException(status_code=404, detail="作物不存在")
+        raise HTTPException(status_code=404, detail='crop not found')
+
     db.delete(crop)
     db.commit()
-    return {"detail": "已删除"}
+    return {'detail': 'crop deleted'}

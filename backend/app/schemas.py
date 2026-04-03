@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # --- Sensor ---
@@ -30,7 +30,7 @@ class DeviceResponse(BaseModel):
     device_name: str
     device_type: str
     status: int
-    params: Optional[dict] = {}
+    params: Optional[dict] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
 
@@ -102,7 +102,7 @@ class AutomationRuleCreate(BaseModel):
     trigger_value: float
     action_device_id: int
     action_type: str  # on/off/set
-    action_params: Optional[dict] = {}
+    action_params: Optional[dict] = Field(default_factory=dict)
     is_enabled: int = 1
 
 
@@ -123,7 +123,7 @@ class AutomationRuleResponse(BaseModel):
     trigger_value: float
     action_device_id: int
     action_type: str
-    action_params: Optional[dict] = {}
+    action_params: Optional[dict] = Field(default_factory=dict)
     is_enabled: int
     created_at: datetime
     updated_at: datetime
@@ -137,7 +137,7 @@ class DeviceLogResponse(BaseModel):
     id: int
     device_id: int
     action: str
-    params: Optional[dict] = {}
+    params: Optional[dict] = Field(default_factory=dict)
     source: str
     created_at: datetime
 
@@ -165,7 +165,7 @@ class ScheduledTaskCreate(BaseModel):
     task_name: str
     device_id: int
     action_type: str
-    action_params: Optional[dict] = {}
+    action_params: Optional[dict] = Field(default_factory=dict)
     cron_expr: str
     repeat_type: str = "once"
     is_enabled: int = 1
@@ -186,7 +186,7 @@ class ScheduledTaskResponse(BaseModel):
     task_name: str
     device_id: int
     action_type: str
-    action_params: Optional[dict] = {}
+    action_params: Optional[dict] = Field(default_factory=dict)
     cron_expr: str
     repeat_type: str
     is_enabled: int
@@ -248,7 +248,8 @@ class UserLogin(BaseModel):
 
 class CaptchaResponse(BaseModel):
     captcha_id: str
-    captcha_text: str
+    captcha_image: str
+    captcha_text: str = ""
 
 
 class TokenResponse(BaseModel):
@@ -396,3 +397,309 @@ class WeatherResponse(BaseModel):
 class WebSocketMessage(BaseModel):
     type: str  # sensor_data / alert / device_status
     data: Any
+
+
+# --- AI / Edge ---
+class WeatherForecastPoint(BaseModel):
+    time: str
+    weather: str
+    temperature: float
+    humidity: float
+
+
+class WeatherForecastResponse(BaseModel):
+    horizon_hours: int
+    points: list[WeatherForecastPoint]
+    suggestions: list[str]
+
+
+class PestDetectResponse(BaseModel):
+    risk_level: str
+    confidence: float
+    pest_type: str
+    reason: str
+    engine: str = "heuristic_v2"
+    quality_score: float = 0.0
+    metrics: dict[str, float] = Field(default_factory=dict)
+    suggestions: list[str] = Field(default_factory=list)
+
+
+class MobilePestTriggerRequest(BaseModel):
+    camera_id: str = "camera-1"
+    zone_id: str = "zone-1"
+    risk_hint: str = "auto"  # auto/high/medium/low
+
+
+class PestDetectFromPathRequest(BaseModel):
+    image_url: str
+    camera_id: str = "camera-1"
+    zone_id: str = "zone-1"
+    source: str = "mobile"
+    risk_hint_fallback: str = "auto"
+
+
+class PestRealtimeItem(BaseModel):
+    created_at: str
+    source: str
+    camera_id: str = ""
+    zone_id: str = ""
+    risk_level: str
+    confidence: float
+    pest_type: str
+    engine: str
+    quality_score: float
+    reason: str
+
+
+class PestFinalSummaryResponse(BaseModel):
+    window_minutes: int
+    source: str
+    window_start: str = ""
+    window_end: str = ""
+    total: int
+    risk_counts: dict[str, int]
+    avg_confidence: float
+    avg_quality: float
+    risk_index: float = 0.0
+    high_risk_ratio: float = 0.0
+    trend: str = "stable"
+    source_breakdown: dict[str, int] = Field(default_factory=dict)
+    top_pest_type: str
+    latest: Optional[PestRealtimeItem] = None
+
+
+class PestRealtimeListResponse(BaseModel):
+    total: int
+    source: str = "all"
+    since_minutes: int = 0
+    risk_levels: list[str] = Field(default_factory=list)
+    items: list[PestRealtimeItem]
+
+
+class EdgeNetworkRequest(BaseModel):
+    online: bool
+
+
+class EdgeControlRequest(BaseModel):
+    task_id: str
+    action: str
+    payload: dict = Field(default_factory=dict)
+
+
+class EdgeTaskItem(BaseModel):
+    task_id: str
+    action: str
+    payload: dict
+    retry_count: int = 0
+    created_at: str
+
+
+class EdgeStatusResponse(BaseModel):
+    online: bool
+    queued_count: int
+    dead_letter_count: int = 0
+    max_retries: int = 3
+    queue: list[EdgeTaskItem]
+
+
+class EdgeHistoryItem(BaseModel):
+    event_type: str
+    detail: dict
+    created_at: str
+
+
+class EdgeHistoryResponse(BaseModel):
+    total: int
+    items: list[EdgeHistoryItem]
+
+
+class EdgeDeadLetterItem(BaseModel):
+    task_id: str
+    action: str
+    payload: dict
+    reason: str
+    retry_count: int
+    failed_at: str
+
+
+class EdgeDeadLetterResponse(BaseModel):
+    total: int
+    items: list[EdgeDeadLetterItem]
+
+
+class AIOpsAuditItem(BaseModel):
+    created_at: str
+    actor: str
+    role: str
+    action: str
+    result: str
+    ip: str
+    detail: dict
+
+
+class AIOpsAuditResponse(BaseModel):
+    total: int
+    items: list[AIOpsAuditItem]
+
+
+class AuthzPolicyResponse(BaseModel):
+    updated_at: str
+    permissions: dict[str, list[str]]
+
+
+class AuthzPolicyUpdateRequest(BaseModel):
+    permissions: dict[str, list[str]]
+
+
+class AuthzPolicyTemplatesResponse(BaseModel):
+    current: dict[str, list[str]]
+    templates: dict[str, dict[str, list[str]]]
+
+
+class AuthzApplyTemplateRequest(BaseModel):
+    template_name: str
+
+
+class MicroClimateZoneInput(BaseModel):
+    zone_id: int
+    zone_name: str
+    temperature: float
+    humidity: float
+    soil_moisture: float
+    target_temperature: float
+    target_humidity: float
+    target_soil_moisture: float
+
+
+class MicroClimateOptimizeRequest(BaseModel):
+    zones: list[MicroClimateZoneInput]
+
+
+class MicroClimateAction(BaseModel):
+    zone_id: int
+    zone_name: str
+    actions: list[str]
+    risk_score: float = 0.0
+
+
+class MicroClimateOptimizeResponse(BaseModel):
+    generated_at: str
+    actions: list[MicroClimateAction]
+
+
+class StrategyExecuteRequest(BaseModel):
+    actions: list[MicroClimateAction]
+    source: str = "ai_ops_web"
+
+
+class StrategyExecuteResult(BaseModel):
+    zone_id: int
+    zone_name: str
+    submitted: list[dict] = Field(default_factory=list)
+
+
+class StrategyExecuteResponse(BaseModel):
+    generated_at: str
+    source: str
+    results: list[StrategyExecuteResult]
+
+
+class IncidentPlanRequest(BaseModel):
+    scenario: str
+    risk_level: str = "medium"
+    pest_type: str = ""
+    zone_id: Optional[int] = None
+    zone_name: str = "default_zone"
+    auto_enqueue: bool = False
+
+
+class IncidentPlanStep(BaseModel):
+    order: int
+    title: str
+    detail: str
+
+
+class IncidentPlanResponse(BaseModel):
+    generated_at: str
+    scenario: str
+    risk_level: str
+    steps: list[IncidentPlanStep]
+    enqueued_tasks: list[dict] = Field(default_factory=list)
+
+
+class WeatherPredictRequest(BaseModel):
+    city: str = "Beijing"
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    horizon_hours: int = 24
+
+
+class WeatherPredictResponse(BaseModel):
+    city: str
+    latitude: float
+    longitude: float
+    horizon_hours: int
+    points: list[WeatherForecastPoint]
+    suggestions: list[str]
+
+
+class HuaweiWatchSyncRequest(BaseModel):
+    watch_id: str = "watch-default"
+    heart_rate: float = 80.0
+    steps: int = 0
+    skin_temperature: float = 36.5
+    battery: int = 80
+    signal_strength: int = 3
+    zone_id: str = ""
+
+
+class HuaweiWatchSyncResponse(BaseModel):
+    accepted: bool
+    tips: list[str]
+    risk_flags: list[str] = Field(default_factory=list)
+    sample: dict
+
+
+class XiaoYiCommandRequest(BaseModel):
+    intent: str
+    text: str = ""
+    params: dict = Field(default_factory=dict)
+
+
+class XiaoYiCommandResponse(BaseModel):
+    accepted: bool
+    command: dict
+    dispatched: list[dict] = Field(default_factory=list)
+
+
+class OpenHarmonyHandoffRequest(BaseModel):
+    handoff_id: str = ""
+    source_device: str
+    target_device: str
+    method: str = "nfc"  # nfc/distributed_bus
+    ttl_seconds: int = 180
+    payload: dict = Field(default_factory=dict)
+
+
+class OpenHarmonyHandoffResponse(BaseModel):
+    accepted: bool
+    handoff: dict
+
+
+class IntegrationRecordsResponse(BaseModel):
+    total: int
+    items: list[dict]
+
+
+class OpenClawAutofixRequest(BaseModel):
+    incident_type: str
+    context: dict = Field(default_factory=dict)
+    dry_run: bool = False
+
+
+class OpenClawAutofixResponse(BaseModel):
+    source: str
+    incident_type: str
+    dry_run: bool
+    actions: list[dict]
+    submitted: list[dict]

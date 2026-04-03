@@ -1,17 +1,29 @@
-import { AbilityConstant, UIAbility, Want } from '@kit.AbilityKit';
+﻿import { AbilityConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
+import { FrontendDeploy } from '../common/Constants';
 
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
+  private ensureDefaultConfig(key: string, value: string): void {
+    const current = AppStorage.get<string>(key);
+    if (!current) {
+      AppStorage.setOrCreate(key, value);
+    }
+  }
+
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(DOMAIN, 'SmartAgri', 'Ability onCreate');
-    // 初始化全局存储
+
     AppStorage.setOrCreate('token', '');
     AppStorage.setOrCreate('username', '');
     AppStorage.setOrCreate('userRole', '');
     AppStorage.setOrCreate('isLoggedIn', false);
+
+    this.ensureDefaultConfig('APP_ENV', FrontendDeploy.DEFAULT_ENV);
+    this.ensureDefaultConfig('API_BASE_URL', '');
+    this.ensureDefaultConfig('WS_BASE_URL', '');
   }
 
   onDestroy(): void {

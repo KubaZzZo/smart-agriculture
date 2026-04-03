@@ -1,126 +1,141 @@
-// 智慧农业 - 个人中心视图
-import { router } from '@kit.ArkUI';
+﻿import { router } from '@kit.ArkUI';
 import { ApiService } from '../common/ApiService';
 import { AppColors } from '../common/Constants';
 
 @Component
 export struct ProfileView {
-  @StorageProp('username') username: string = '未登录';
+  @StorageProp('username') username: string = '游客';
   @StorageProp('userRole') userRole: string = '';
 
   @Builder
-  menuItem(icon: string, title: string, page: string) {
+  menuItem(icon: Resource, title: string, page: string): void {
     Row() {
-      Text(icon)
-        .fontSize(22)
-        .margin({ right: 12 })
+      SymbolGlyph(icon)
+        .fontSize(20)
+        .fontColor([AppColors.PRIMARY])
+        .margin({ right: 12 });
       Text(title)
         .fontSize(15)
         .fontColor(AppColors.TEXT_PRIMARY)
-        .layoutWeight(1)
+        .layoutWeight(1);
       Text('>')
         .fontSize(16)
-        .fontColor(AppColors.TEXT_HINT)
+        .fontColor(AppColors.TEXT_HINT);
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 14, bottom: 14 })
     .backgroundColor(AppColors.CARD_BG)
-    .onClick(() => {
+    .onClick((): void => {
       router.pushUrl({ url: page });
-    })
+    });
   }
 
-  build() {
+  roleText(): string {
+    return this.userRole === 'admin' ? '管理员' : '操作员';
+  }
+
+  build(): void {
     Scroll() {
       Column() {
-        // 用户信息卡片
-        Row() {
-          Column() {
-            Text('👤')
-              .fontSize(40)
-          }
-          .width(60)
-          .height(60)
-          .backgroundColor('#E8F5E9')
-          .borderRadius(30)
-          .justifyContent(FlexAlign.Center)
-          .margin({ right: 14 })
+        Column() {
+          Row() {
+            Column() {
+              SymbolGlyph($r('sys.symbol.person'))
+                .fontSize(34)
+                .fontColor([AppColors.PRIMARY]);
+            }
+            .width(64)
+            .height(64)
+            .backgroundColor('#EAF6EE')
+            .borderRadius(32)
+            .justifyContent(FlexAlign.Center)
+            .alignItems(HorizontalAlign.Center)
+            .margin({ right: 14 });
 
-          Column() {
-            Text(this.username || '未登录')
-              .fontSize(18)
-              .fontWeight(FontWeight.Bold)
-              .fontColor(AppColors.TEXT_PRIMARY)
-            Text(this.userRole === 'admin' ? '管理员' : '普通用户')
-              .fontSize(13)
-              .fontColor(AppColors.TEXT_SECONDARY)
-              .margin({ top: 4 })
+            Column() {
+              Text(this.username || '游客')
+                .fontSize(20)
+                .fontWeight(FontWeight.Bold)
+                .fontColor(AppColors.TEXT_PRIMARY);
+              Text(this.roleText())
+                .fontSize(13)
+                .fontColor(AppColors.TEXT_SECONDARY)
+                .margin({ top: 4 });
+            }
+            .alignItems(HorizontalAlign.Start)
+            .layoutWeight(1);
           }
-          .alignItems(HorizontalAlign.Start)
+          .width('100%');
+
+          Text('系统配置与运维快捷入口')
+            .fontSize(12)
+            .fontColor(AppColors.TEXT_HINT)
+            .width('100%')
+            .margin({ top: 12 });
         }
         .width('100%')
-        .padding(20)
+        .padding(18)
         .margin({ left: 12, right: 12, top: 12 })
         .backgroundColor(AppColors.CARD_BG)
-        .borderRadius(12)
-        .shadow({ radius: 4, color: '#1A000000', offsetX: 0, offsetY: 2 })
+        .borderRadius(16)
+        .shadow({ radius: 7, color: '#14000000', offsetX: 0, offsetY: 3 });
 
-        // 功能菜单
-        Text('农业管理')
+        Text('业务功能')
           .fontSize(13)
+          .fontWeight(FontWeight.Medium)
           .fontColor(AppColors.TEXT_SECONDARY)
-          .margin({ top: 20, bottom: 6 })
+          .margin({ top: 18, bottom: 6 })
           .padding({ left: 16 })
-          .width('100%')
+          .width('100%');
 
         Column() {
-          this.menuItem('🌱', '作物管理', 'pages/CropPage')
-          Divider().color(AppColors.DIVIDER).margin({ left: 50 })
-          this.menuItem('🏡', '区域管理', 'pages/ZonePage')
-          Divider().color(AppColors.DIVIDER).margin({ left: 50 })
-          this.menuItem('💧', '智能灌溉', 'pages/IrrigationPage')
-          Divider().color(AppColors.DIVIDER).margin({ left: 50 })
-          this.menuItem('💡', '智能光照', 'pages/LightingPage')
+          this.menuItem($r('sys.symbol.leaf'), '作物管理', 'pages/CropPage');
+          Divider().color(AppColors.DIVIDER).margin({ left: 50 });
+          this.menuItem($r('sys.symbol.house'), '区域管理', 'pages/ZonePage');
+          Divider().color(AppColors.DIVIDER).margin({ left: 50 });
+          this.menuItem($r('sys.symbol.drop'), '智能灌溉', 'pages/IrrigationPage');
+          Divider().color(AppColors.DIVIDER).margin({ left: 50 });
+          this.menuItem($r('sys.symbol.sun_max'), '智能光照', 'pages/LightingPage');
         }
         .margin({ left: 12, right: 12 })
         .borderRadius(12)
-        .clip(true)
+        .clip(true);
 
-        Text('系统设置')
+        Text('系统功能')
           .fontSize(13)
+          .fontWeight(FontWeight.Medium)
           .fontColor(AppColors.TEXT_SECONDARY)
-          .margin({ top: 20, bottom: 6 })
+          .margin({ top: 18, bottom: 6 })
           .padding({ left: 16 })
-          .width('100%')
+          .width('100%');
 
         Column() {
-          this.menuItem('🔗', '联动规则', 'pages/AutomationPage')
-          Divider().color(AppColors.DIVIDER).margin({ left: 50 })
-          this.menuItem('📋', '数据报告', 'pages/ReportPage')
+          this.menuItem($r('sys.symbol.link'), '联动规则', 'pages/AutomationPage');
+          Divider().color(AppColors.DIVIDER).margin({ left: 50 });
+          this.menuItem($r('sys.symbol.doc_text'), '数据报告', 'pages/ReportPage');
         }
         .margin({ left: 12, right: 12 })
         .borderRadius(12)
-        .clip(true)
+        .clip(true);
 
-        // 退出登录
         Button('退出登录')
           .width('90%')
           .height(44)
           .borderRadius(22)
-          .backgroundColor('#FFEBEE')
+          .backgroundColor('#FDECEC')
           .fontColor(AppColors.WARN)
           .fontSize(15)
-          .margin({ top: 30, bottom: 30 })
-          .onClick(() => {
+          .margin({ top: 28, bottom: 30 })
+          .onClick((): void => {
             ApiService.clearToken();
             router.pushUrl({ url: 'pages/Login' });
-          })
+          });
       }
-      .width('100%')
+      .width('100%');
     }
     .width('100%')
     .height('100%')
     .scrollBar(BarState.Off)
-    .backgroundColor(AppColors.BG)
+    .backgroundColor(AppColors.BG);
   }
 }

@@ -145,17 +145,59 @@ export interface DailyReport {
   created_at: string;
 }
 
-export interface WaterStats {
-  today_usage: number;
-  week_usage: number;
-  month_usage: number;
-}
-
 export interface WeatherInfo {
   temperature: number;
   humidity: number;
   description: string;
   wind_speed: number;
+}
+
+export interface PestRealtimeItem {
+  created_at: string;
+  source: string;
+  camera_id: string;
+  zone_id: string;
+  risk_level: string;
+  confidence: number;
+  pest_type: string;
+  engine: string;
+  quality_score: number;
+  reason: string;
+}
+
+export interface PestFinalSummary {
+  window_minutes: number;
+  source: string;
+  total: number;
+  risk_counts: Record<string, number>;
+  avg_confidence: number;
+  avg_quality: number;
+  top_pest_type: string;
+  latest: PestRealtimeItem | null;
+}
+
+export interface PestRealtimeListResponse {
+  total: number;
+  items: PestRealtimeItem[];
+}
+
+export interface MobilePestTriggerRequest {
+  camera_id: string;
+  zone_id: string;
+  risk_hint: string;
+}
+
+export interface CameraSnapshotResponse {
+  image_url: string;
+  timestamp: string;
+}
+
+export interface PestDetectFromPathRequest {
+  image_url: string;
+  camera_id: string;
+  zone_id: string;
+  source: string;
+  risk_hint_fallback: string;
 }
 
 export interface TokenResponse {
@@ -224,9 +266,11 @@ export interface RegisterRequest {
 
 export interface CaptchaResponse {
   captcha_id: string;
-  captcha_text: string;
+  captcha_image: string;
+  captcha_text?: string;
 }
 
 export interface WaterTodayResponse {
+  date: string;
   total_liters: number;
 }
